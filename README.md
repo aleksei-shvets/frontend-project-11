@@ -1,4 +1,4 @@
-# RSS agregator
+# RSS aggregator
 
 Name | Badge
 :-----: | :----:
