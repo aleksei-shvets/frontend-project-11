@@ -2,6 +2,7 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import i18next from 'i18next';
 import ru from './locale/ru.js';
+import axios from 'axios';
 
 const feedbackEl = document.querySelector('.feedback');
 const inputEl = document.getElementById('url-input');
@@ -68,15 +69,24 @@ export default () => {
     e.preventDefault();
     const link = inputEl.value;
 
-    schema.isValid(link)
+    const response = schema.isValid(link)
       .then((data) => {
         const status = data ? 'valid' : 'invalid';
         watcherValidation.linkValidation = status;
         if (data) {
           inputEl.value = '';
-        } else {
-          inputEl.value = link;
+          return axios.get(link);
         }
+        return link;
       });
+    response.then((res) => {
+      if (res === link) {
+        inputEl.value = link;
+        return;
+      }
+      if (res.status >= 200 && res.status < 300) {
+        console.log(res.data);
+      }
+    });
   });
 };
