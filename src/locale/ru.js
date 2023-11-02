@@ -5,6 +5,8 @@ export default {
     },
     errors: {
       invalidUrl: 'Ссылка должна быть валидным URL',
+      notConnected: 'Что-то пошло не так...',
+      doubledChannel: 'Канал уже добавлен',
     },
     mainTitle: 'RSS агрегатор',
     subTitle: 'Начните читать RSS сегодня! Это легко, это красиво.',
