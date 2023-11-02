@@ -14,5 +14,7 @@ export default {
     exampleLink: 'Пример: https://www.vedomosti.ru/rss/news',
     createdBy: 'created by',
     myName: 'Aleksei Shvets',
+    postTitle: 'Посты',
+    feedTitle: 'Фиды',
   },
 };
