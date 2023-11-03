@@ -16,5 +16,6 @@ export default {
     myName: 'Aleksei Shvets',
     postTitle: 'Посты',
     feedTitle: 'Фиды',
+    add: 'Добавить',
   },
 };

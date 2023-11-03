@@ -36,6 +36,7 @@ const errorsRender = () => {
 
 const feedsRender = () => {
   const feedsContainer = document.querySelector('.feeds');
+  feedsContainer.innerHTML = '';
 
   const feedsColumn = document.createElement('div');
   feedsColumn.classList.add('card', 'border-0');
@@ -53,7 +54,6 @@ const feedsRender = () => {
   feedTitleDiv.append(feedsBlockTitle);
   feedsColumn.append(feedTitleDiv, feeds);
   feedsContainer.append(feedsColumn);
-  //feedsContainer.append(feeds);
 
   feedsState.forEach((feed) => {
     const feedItem = document.createElement('li');
@@ -71,6 +71,7 @@ const feedsRender = () => {
 
 const postsRender = () => {
   const postsContainer = document.querySelector('.posts');
+  postsContainer.innerHTML = '';
 
   const postsColumn = document.createElement('div');
   postsColumn.classList.add('card', 'border-0');
@@ -176,11 +177,13 @@ export default () => {
   const subTitleEl = document.querySelector('.lead');
   const labelEl = document.querySelector('[for="url-input"]');
   const exampleEl = document.getElementById('example');
+  const addButtonEl = document.querySelector('[aria-label="add"]');
 
   headTitileEl.textContent = i18next.t('mainTitle');
   subTitleEl.textContent = i18next.t('subTitle');
   labelEl.textContent = i18next.t('inputHint');
   exampleEl.textContent = i18next.t('exampleLink');
+  addButtonEl.textContent = i18next.t('add');
 
   formEl.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -206,7 +209,6 @@ export default () => {
       feedsState.forEach((item) => {
         if (item.feedName === feedTitle) {
           watcherValidation.errors.push('doubledChannel');
-          // return;
         }
       });
       const feedId = idCounter;
@@ -218,7 +220,5 @@ export default () => {
       console.log(err);
       watcherValidation.errors.push('notConnected');
     });
-    console.log(feedsState);
-    console.log(postsState);
   });
 };
