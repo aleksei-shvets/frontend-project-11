@@ -10,11 +10,14 @@ const formEl = document.querySelector('.rss-form');
 
 const state = {
   linkValidation: 'none',
-  errors: [],
+  errors: '',
 };
 
 const feedsState = [];
-const postsState = [];
+const postsState = {
+  postsName: [],
+  postsData: [],
+};
 
 i18next.init({
   lng: 'ru',
@@ -27,14 +30,13 @@ i18next.init({
 const schema = yup.string().url();
 
 const errorsRender = () => {
-  if (state.errors.length > 0) {
-    feedbackEl.textContent = i18next.t(`errors.${state.errors}`);
-    feedbackEl.classList.add('text-danger');
-    feedbackEl.classList.remove('text-success');
-  }
+  feedbackEl.textContent = (state.errors !== '') ? i18next.t(`errors.${state.errors}`) : '';
+  feedbackEl.classList.add('text-danger');
+  feedbackEl.classList.remove('text-success');
 };
 
 const feedsRender = () => {
+  if (state.errors.length > 0) return;
   const feedsContainer = document.querySelector('.feeds');
   feedsContainer.innerHTML = '';
 
@@ -70,6 +72,7 @@ const feedsRender = () => {
 };
 
 const postsRender = () => {
+  if (state.errors.length > 0) return;
   const postsContainer = document.querySelector('.posts');
   postsContainer.innerHTML = '';
 
@@ -92,7 +95,7 @@ const postsRender = () => {
   postsColumn.append(posts);
   postsContainer.append(postsColumn);
 
-  postsState.forEach((item) => {
+  postsState.postsData.forEach((item) => {
     item.feedPosts.forEach((post) => {
       const postItem = document.createElement('li');
       postItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -115,7 +118,7 @@ const postsRender = () => {
   });
 };
 
-const feedbackRender = (currentStatus) => {
+const feedbackMessageRender = (currentStatus) => {
   if (currentStatus === 'none') {
     feedbackEl.textContent = '';
   }
@@ -128,58 +131,97 @@ const feedbackRender = (currentStatus) => {
   }
 };
 
+const request = (link) => schema.isValid(link)
+  .then((data) => {
+    state.errors = '';
+    if (!data) {
+      throw new Error('Invalid link');
+    }
+  })
+  .then(() => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`))
+  .catch((error) => {
+    throw error;
+  });
+
+const parser = (xmlString) => {
+  try {
+    const newParser = new DOMParser();
+    const doc = newParser.parseFromString(xmlString, 'application/xhtml+xml');
+    const postItems = doc.querySelectorAll('channel > item');
+    const feedTitle = doc.querySelector('channel > title').textContent;
+    const feedDescription = doc.querySelector('channel > description').textContent;
+    const feedPosts = [];
+    postItems.forEach((post) => {
+      const postTitle = post.querySelector('title').textContent;
+      const postLink = post.querySelector('link').textContent;
+      const postDescription = post.querySelector('description').textContent;
+      const postCategory = (post.querySelector('category')) ? post.querySelector('category').textContent : '';
+      feedPosts.push({
+        postTitle,
+        postDescription,
+        postCategory,
+        postLink,
+      });
+    });
+    return [feedTitle, feedDescription, feedPosts];
+  } catch (e) {
+    throw new Error(e.message = 'notRss');
+  }
+};
+
 const watcherValidation = onChange(state, (path, current) => {
   if (path === 'linkValidation') {
-    feedbackRender(current);
+    feedbackMessageRender(current);
   }
   if (path === 'errors') {
-    feedbackRender(current);
-    current.forEach(() => errorsRender());
+    errorsRender();
   }
-});
-
-const feedsWatcher = onChange(feedsState, () => {
-  feedsRender();
 });
 
 const postsWatcher = onChange(postsState, () => {
   postsRender();
 });
 
-const parser = (xmlString) => {
-  const newParser = new DOMParser();
-  const doc = newParser.parseFromString(xmlString, 'application/xhtml+xml');
-  const postItems = doc.querySelectorAll('channel > item');
-  const feedTitle = doc.querySelector('channel > title').textContent;
-  const feedDescription = doc.querySelector('channel > description').textContent;
-  const feedPosts = [];
-  postItems.forEach((post) => {
-    const postTitle = post.querySelector('title').textContent;
-    const postLink = post.querySelector('link').textContent;
-    const postDescription = post.querySelector('description').textContent;
-    const postCategory = (post.querySelector('category')) ? post.querySelector('category').textContent : '';
-    feedPosts.push({
-      postTitle,
-      postDescription,
-      postCategory,
-      postLink,
-    });
-  });
-  return [feedTitle, feedDescription, feedPosts];
+const updateFeed = (link, feedId) => {
+  const delay = 5000;
+  let timer = setTimeout(function update() {
+    axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`)
+      .then((responseData) => {
+        const [, , feedPosts] = parser(responseData.data.contents);
+        feedPosts.forEach((item) => {
+          if (!postsState.postsName.includes(item.postTitle)) {
+            feedPosts.forEach((post) => {
+              postsWatcher.postsName.push(post.postTitle);
+            });
+            postsWatcher.postsData.push({ feedId, feedPosts });
+          }
+        });
+        timer = setTimeout(update, delay);
+      });
+  }, delay);
 };
+
+const feedsWatcher = onChange(feedsState, () => {
+  feedsRender();
+  if (feedsState.length > 0) {
+    feedsState.forEach((feed) => {
+      const link = feed.feedLink;
+      const id = feed.feedId;
+      updateFeed(link, id);
+    });
+  }
+});
 
 export default () => {
   let idCounter;
   if (feedsState.length === 0) {
     idCounter = 0;
   }
-  const headTitileEl = document.querySelector('h1');
   const subTitleEl = document.querySelector('.lead');
   const labelEl = document.querySelector('[for="url-input"]');
   const exampleEl = document.getElementById('example');
   const addButtonEl = document.querySelector('[aria-label="add"]');
 
-  headTitileEl.textContent = i18next.t('mainTitle');
   subTitleEl.textContent = i18next.t('subTitle');
   labelEl.textContent = i18next.t('inputHint');
   exampleEl.textContent = i18next.t('exampleLink');
@@ -187,38 +229,55 @@ export default () => {
 
   formEl.addEventListener('submit', (e) => {
     e.preventDefault();
+    feedbackEl.innerHTML = '';
+    watcherValidation.linkValidation = 'none';
     const link = inputEl.value;
-
-    const response = schema.isValid(link)
-      .then((data) => {
-        if (!data) {
-          watcherValidation.errors.push('invalidUrl');
-          return link;
-        }
-        inputEl.value = '';
-        return axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`);
-      });
-
-    response.then((res) => {
-      if (res === link) {
+    schema.isValid(link).then((response) => {
+      if (!response) {
         inputEl.value = link;
-        return;
+        throw new Error('Invalid');
       }
-      const [feedTitle, feedDescription, feedPosts] = parser(res.data.contents);
+    }).then(() => request(link)).then((responseData) => {
+      const [feedTitle, feedDescription, feedPosts] = parser(responseData.data.contents);
 
       feedsState.forEach((item) => {
-        if (item.feedName === feedTitle) {
-          watcherValidation.errors.push('doubledChannel');
+        if (item.feedTitle === feedTitle) {
+          throw new Error('doubledChannel');
         }
       });
       const feedId = idCounter;
       idCounter += 1;
-      feedsWatcher.push({ feedId, feedTitle, feedDescription });
-      postsWatcher.push({ feedId, feedPosts });
+      feedsWatcher.push({
+        feedId, feedTitle, feedDescription, feedLink: link,
+      });
+      feedPosts.forEach((item) => {
+        postsWatcher.postsName.push(item.postTitle);
+      });
+      postsWatcher.postsData.push({ feedId, feedPosts });
       watcherValidation.linkValidation = 'valid';
-    }).catch((err) => {
-      console.log(err);
-      watcherValidation.errors.push('notConnected');
-    });
+      inputEl.value = '';
+      inputEl.classList.remove('is-invalid');
+      inputEl.classList.remove('is-valid');
+      console.log(feedsState);
+      console.log(postsState);
+    })
+      .catch((error) => {
+        if (error.message === 'Invalid') {
+          watcherValidation.errors = 'invalidUrl';
+        }
+        if (error.message === 'doubledChannel') {
+          watcherValidation.errors = 'doubledChannel';
+        }
+        if (error.message === 'Invalid link') {
+          watcherValidation.errors = 'invalidUrl';
+        }
+        if (error.message === 'notRss') {
+          watcherValidation.errors = 'notRss';
+        }
+        if (error.request || error.response) {
+          watcherValidation.errors = 'notConnected';
+        }
+        inputEl.value = link;
+      });
   });
 };
