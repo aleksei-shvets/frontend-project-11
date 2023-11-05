@@ -1,5 +1,4 @@
-// import { Tooltip, Toast, Popover } from 'bootstrap';
 import './style.scss';
-import fun from './view.js';
+import app from './view.js';
 
-fun();
+app();
