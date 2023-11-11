@@ -7,10 +7,27 @@ import ru from './locale/ru.js';
 const feedbackEl = document.querySelector('.feedback');
 const inputEl = document.getElementById('url-input');
 const formEl = document.querySelector('.rss-form');
+const modal = document.getElementById('modal');
+const modalTitle = document.querySelector('.modal-title');
+const modalBody = document.querySelector('.modal-body');
+const readBtn = document.getElementById('read-btn');
+const closeBtn = document.getElementById('close-btn');
+const closeIcon = document.querySelector('.btn-close');
+const body = document.querySelector('body');
+
+let postIdCounter = 0;
+let feedIdCounter;
 
 const state = {
   linkValidation: 'none',
   errors: '',
+};
+
+const modalState = {
+  visible: 'hidden',
+  modalPostLink: '',
+  modalPostTitle: '',
+  modalPostDescription: '',
 };
 
 const feedsState = [];
@@ -71,6 +88,60 @@ const feedsRender = () => {
   });
 };
 
+const feedbackMessageRender = (currentStatus) => {
+  if (currentStatus === 'none') {
+    feedbackEl.textContent = '';
+  }
+  if (currentStatus === 'valid') {
+    feedbackEl.textContent = i18next.t('feedback.uploadRss');
+    feedbackEl.classList.remove('text-danger');
+    feedbackEl.classList.add('text-success');
+    inputEl.classList.remove('is-invalid');
+    inputEl.classList.add('is-valid');
+  }
+};
+
+const stateWatcher = onChange(state, (path, current) => {
+  if (path === 'linkValidation') {
+    feedbackMessageRender(current);
+  }
+  if (path === 'errors') {
+    errorsRender();
+  }
+});
+
+const modalWatcher = onChange(modalState, (path, current) => {
+  if (path === 'visible') {
+    if (current === 'showed') {
+      body.classList.add('modal-open');
+      body.setAttribute('style', 'overflow: hidden; padding-right: 13px;');
+      modal.classList.add('show');
+      modal.setAttribute('style', 'display: block');
+      modal.setAttribute('data-bs-backdrop', 'true');
+      modal.setAttribute('aria-modal', 'true');
+      modal.removeAttribute('aria-hidden');
+
+      modalTitle.textContent = modalState.modalPostTitle;
+      modalBody.textContent = modalState.modalPostDescription;
+      readBtn.href = modalState.modalPostLink;
+      const backdrop = document.createElement('div');
+      backdrop.classList.add('modal-backdrop', 'fade', 'show');
+      body.appendChild(backdrop);
+    }
+    if (current === 'hidden') {
+      const backdropDivEl = document.querySelector('.modal-backdrop');
+      modal.classList.remove('show');
+      modal.removeAttribute('style', 'display: block');
+      modal.removeAttribute('aria-modal');
+      modal.setAttribute('aria-hidden', 'true');
+      backdropDivEl.remove();
+      modalState.modalPostLink = '';
+      modalState.modalPostTitle = '';
+      modalState.modalPostDescription = '';
+    }
+  }
+});
+
 const postsRender = () => {
   if (state.errors.length > 0) return;
   const postsContainer = document.querySelector('.posts');
@@ -95,7 +166,8 @@ const postsRender = () => {
   postsColumn.append(posts);
   postsContainer.append(postsColumn);
 
-  postsState.postsData.forEach((item) => {
+  const reversedPostsList = postsState.postsData.reverse();
+  reversedPostsList.forEach((item) => {
     item.feedPosts.forEach((post) => {
       const postItem = document.createElement('li');
       postItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -107,38 +179,31 @@ const postsRender = () => {
       linkName.href = post.postLink;
 
       const button = document.createElement('button');
-      button.textContent = 'Просмотр';
+      button.textContent = i18next.t('viewing');
       button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
       button.setAttribute('type', 'button');
       button.setAttribute('rel', 'noopener noreferrer');
 
       postItem.append(linkName, button);
       posts.append(postItem);
+
+      console.log(postsState);
+
+      button.addEventListener('click', () => {
+        readBtn.textContent = i18next.t('readBtn');
+        closeBtn.textContent = i18next.t('closeBtn');
+
+        modalWatcher.modalPostLink = post.postLink;
+        modalWatcher.modalPostTitle = post.postTitle;
+        modalWatcher.modalPostDescription = post.postDescription;
+        modalWatcher.visible = 'showed';
+      });
     });
   });
 };
 
-const feedbackMessageRender = (currentStatus) => {
-  if (currentStatus === 'none') {
-    feedbackEl.textContent = '';
-  }
-  if (currentStatus === 'valid') {
-    feedbackEl.textContent = i18next.t('feedback.uploadRss');
-    feedbackEl.classList.remove('text-danger');
-    feedbackEl.classList.add('text-success');
-    inputEl.classList.remove('is-invalid');
-    inputEl.classList.add('is-valid');
-  }
-};
-
-const request = (link) => schema.isValid(link)
-  .then((data) => {
-    state.errors = '';
-    if (!data) {
-      throw new Error('Invalid link');
-    }
-  })
-  .then(() => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`))
+const request = (link) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`)
+  .then((response) => response)
   .catch((error) => {
     throw error;
   });
@@ -149,34 +214,22 @@ const parser = (xmlString) => {
     const doc = newParser.parseFromString(xmlString, 'application/xhtml+xml');
     const postItems = doc.querySelectorAll('channel > item');
     const feedTitle = doc.querySelector('channel > title').textContent;
-    const feedDescription = doc.querySelector('channel > description').textContent;
     const feedPosts = [];
     postItems.forEach((post) => {
       const postTitle = post.querySelector('title').textContent;
       const postLink = post.querySelector('link').textContent;
       const postDescription = post.querySelector('description').textContent;
-      const postCategory = (post.querySelector('category')) ? post.querySelector('category').textContent : '';
       feedPosts.push({
         postTitle,
         postDescription,
-        postCategory,
         postLink,
       });
     });
-    return [feedTitle, feedDescription, feedPosts];
+    return [feedTitle, feedPosts];
   } catch (e) {
     throw new Error(e.message = 'notRss');
   }
 };
-
-const watcherValidation = onChange(state, (path, current) => {
-  if (path === 'linkValidation') {
-    feedbackMessageRender(current);
-  }
-  if (path === 'errors') {
-    errorsRender();
-  }
-});
 
 const postsWatcher = onChange(postsState, () => {
   postsRender();
@@ -187,16 +240,23 @@ const updateFeed = (link, feedId) => {
   let timer = setTimeout(function update() {
     axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`)
       .then((responseData) => {
-        const [, , feedPosts] = parser(responseData.data.contents);
+        const [, feedPosts] = parser(responseData.data.contents);
         feedPosts.forEach((item) => {
           if (!postsState.postsName.includes(item.postTitle)) {
-            feedPosts.forEach((post) => {
-              postsWatcher.postsName.push(post.postTitle);
-            });
-            postsWatcher.postsData.push({ feedId, feedPosts });
+            postsWatcher.postsName.push(item.postTitle);
+            const newPost = item;
+            newPost.postId = postIdCounter;
+            postsWatcher.postsData.push(newPost);
+            postIdCounter += 1;
+            console.log(newPost);
+            console.log(feedsState);
+            console.log(postsState);
           }
         });
         timer = setTimeout(update, delay);
+      }).catch((err) => {
+        console.log(err);
+        stateWatcher.errors = 'unknownError';
       });
   }, delay);
 };
@@ -213,9 +273,8 @@ const feedsWatcher = onChange(feedsState, () => {
 });
 
 export default () => {
-  let idCounter;
   if (feedsState.length === 0) {
-    idCounter = 0;
+    feedIdCounter = 0;
   }
   const subTitleEl = document.querySelector('.lead');
   const labelEl = document.querySelector('[for="url-input"]');
@@ -227,34 +286,50 @@ export default () => {
   exampleEl.textContent = i18next.t('exampleLink');
   addButtonEl.textContent = i18next.t('add');
 
+  closeBtn.addEventListener('click', () => {
+    modalWatcher.visible = 'hidden';
+  });
+
+  closeIcon.addEventListener('click', () => {
+    modalWatcher.visible = 'hidden';
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target.className !== 'modal') {
+      modalWatcher.visible = 'hidden';
+    }
+  });
+
   formEl.addEventListener('submit', (e) => {
     e.preventDefault();
     feedbackEl.innerHTML = '';
-    watcherValidation.linkValidation = 'none';
+    stateWatcher.linkValidation = 'none';
     const link = inputEl.value;
     schema.isValid(link).then((response) => {
       if (!response) {
         inputEl.value = link;
-        throw new Error('Invalid');
+        throw new Error('invalidUrl');
       }
     }).then(() => request(link)).then((responseData) => {
-      const [feedTitle, feedDescription, feedPosts] = parser(responseData.data.contents);
+      const [feedTitle, feedPosts] = parser(responseData.data.contents);
 
       feedsState.forEach((item) => {
         if (item.feedTitle === feedTitle) {
           throw new Error('doubledChannel');
         }
       });
-      const feedId = idCounter;
-      idCounter += 1;
+      const feedId = feedIdCounter;
+      feedIdCounter += 1;
       feedsWatcher.push({
-        feedId, feedTitle, feedDescription, feedLink: link,
+        feedId, feedTitle, feedLink: link,
       });
       feedPosts.forEach((item) => {
         postsWatcher.postsName.push(item.postTitle);
+        item.postId = postIdCounter;
+        postIdCounter += 1;
       });
       postsWatcher.postsData.push({ feedId, feedPosts });
-      watcherValidation.linkValidation = 'valid';
+      stateWatcher.linkValidation = 'valid';
       inputEl.value = '';
       inputEl.classList.remove('is-invalid');
       inputEl.classList.remove('is-valid');
@@ -262,22 +337,42 @@ export default () => {
       console.log(postsState);
     })
       .catch((error) => {
-        if (error.message === 'Invalid') {
-          watcherValidation.errors = 'invalidUrl';
-        }
         if (error.message === 'doubledChannel') {
-          watcherValidation.errors = 'doubledChannel';
+          stateWatcher.errors = 'doubledChannel';
         }
-        if (error.message === 'Invalid link') {
-          watcherValidation.errors = 'invalidUrl';
+        if (error.message === 'invalidUrl') {
+          stateWatcher.errors = 'invalidUrl';
         }
         if (error.message === 'notRss') {
-          watcherValidation.errors = 'notRss';
+          stateWatcher.errors = 'notRss';
         }
         if (error.request || error.response) {
-          watcherValidation.errors = 'notConnected';
+          stateWatcher.errors = 'notConnected';
         }
         inputEl.value = link;
       });
   });
 };
+
+/*
+const updateFeed = (link, feedId) => {
+  const delay = 5000;
+  let timer = setTimeout(function update() {
+    axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`)
+      .then((responseData) => {
+        const [, feedPosts] = parser(responseData.data.contents);
+        feedPosts.forEach((item) => {
+          if (!postsState.postsName.includes(item.postTitle)) {
+            feedPosts.forEach((post) => {
+              postsWatcher.postsName.push(post.postTitle);
+            });
+            postsWatcher.postsData.push({ feedId, feedPosts });
+          }
+        });
+        timer = setTimeout(update, delay);
+      }).catch(() => {
+        stateWatcher.errors = 'unknownError';
+      });
+  }, delay);
+};
+*/

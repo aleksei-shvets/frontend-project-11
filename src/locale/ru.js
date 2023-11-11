@@ -8,6 +8,7 @@ export default {
       doubledChannel: 'Канал уже добавлен',
       notRss: 'Ресурс не содержит валидный RSS',
       notConnected: 'Ошибка сети',
+      unknownError: 'Что-то пошло не так... Некоторые фиды не удалось обновить',
     },
     subTitle: 'Начните читать RSS сегодня! Это легко, это красиво.',
     inputHint: 'Ссылка RSS',
@@ -17,5 +18,8 @@ export default {
     postTitle: 'Посты',
     feedTitle: 'Фиды',
     add: 'Добавить',
+    viewing: 'Просмотр',
+    closeBtn: 'Закрыть',
+    readBtn: 'Читать полностью',
   },
 };

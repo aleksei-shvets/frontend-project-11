@@ -10,13 +10,13 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"></h5><button type="button" class="btn-close close" data-bs-dismiss="modal"
-            aria-label="Close"></button>
+          <h5 class="modal-title"></h5>
+          <button type="button" class="btn-close close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body text-break"></div>
-        <div class="modal-footer"><a class="btn btn-primary full-article" href="#" role="button" target="_blank"
-            rel="noopener noreferrer">Читать полностью </a><button type="button" class="btn btn-secondary"
-            data-bs-dismiss="modal">Закрыть</button></div>
+        <div class="modal-footer">
+          <a id="read-btn" class="btn btn-primary full-article" href="#" role="button" target="_blank" rel="noopener noreferrer"></a>
+          <button id="close-btn" type="button" class="btn btn-secondary" data-bs-dismiss="modal"></button></div>
       </div>
     </div>
   </div>
@@ -39,7 +39,7 @@
               </div>
             </div>
           </form>
-          <p class="mt-2 mb-0" id="example"></p>
+          <p class="mt-2 mb-0 fw-light text-white-50" id="example"></p>
           <p class="feedback m-0 position-absolute small"></p>
         </div>
       </div>
