@@ -14,9 +14,11 @@ const readBtn = document.getElementById('read-btn');
 const closeBtn = document.getElementById('close-btn');
 const closeIcon = document.querySelector('.btn-close');
 const body = document.querySelector('body');
+const submitBtn = document.querySelector('[type="submit"]');
+
+const allOriginsLink = 'https://allorigins.hexlet.app/get?disableCache=true&url=';
 
 let postIdCounter = 0;
-let feedIdCounter;
 
 const state = {
   linkValidation: 'none',
@@ -34,6 +36,7 @@ const feedsState = [];
 const postsState = {
   postsName: [],
   postsData: [],
+  readPosts: [],
 };
 
 i18next.init({
@@ -74,7 +77,7 @@ const feedsRender = () => {
   feedsColumn.append(feedTitleDiv, feeds);
   feedsContainer.append(feedsColumn);
 
-  feedsState.forEach((feed) => {
+  feedsState.reverse().forEach((feed) => {
     const feedItem = document.createElement('li');
     feedItem.classList.add('list-group-item', 'border-0', 'border-end-0');
     const feedTitle = document.createElement('h3');
@@ -166,47 +169,82 @@ const postsRender = () => {
   postsColumn.append(posts);
   postsContainer.append(postsColumn);
 
-  const reversedPostsList = postsState.postsData.reverse();
-  reversedPostsList.forEach((item) => {
-    item.feedPosts.forEach((post) => {
-      const postItem = document.createElement('li');
-      postItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
-      const linkName = document.createElement('a');
-      linkName.textContent = post.postTitle;
-      linkName.classList.add('fw-bold');
-      linkName.setAttribute('target', '_blank');
-      linkName.setAttribute('rel', 'noopener noreferrer');
-      linkName.href = post.postLink;
+  postsState.postsData.reverse().forEach((post) => {
+    const postItem = document.createElement('li');
+    postItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+    const linkName = document.createElement('a');
+    linkName.textContent = post.postTitle;
+    linkName.classList.add('fw-bold');
+    linkName.setAttribute('target', '_blank');
+    linkName.setAttribute('rel', 'noopener noreferrer');
+    linkName.href = post.postLink;
 
-      const button = document.createElement('button');
-      button.textContent = i18next.t('viewing');
-      button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-      button.setAttribute('type', 'button');
-      button.setAttribute('rel', 'noopener noreferrer');
+    linkName.addEventListener('click', () => {
+      postsState.readPosts.push(post.postId);
+      linkName.classList.remove('fw-bold');
+      linkName.classList.add('fw-normal', 'link-secondary');
+    });
 
-      postItem.append(linkName, button);
-      posts.append(postItem);
+    const button = document.createElement('button');
+    button.textContent = i18next.t('viewing');
+    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    button.setAttribute('type', 'button');
+    button.setAttribute('rel', 'noopener noreferrer');
 
-      console.log(postsState);
+    postItem.append(linkName, button);
+    posts.append(postItem);
 
-      button.addEventListener('click', () => {
-        readBtn.textContent = i18next.t('readBtn');
-        closeBtn.textContent = i18next.t('closeBtn');
+    console.log(postsState);
 
-        modalWatcher.modalPostLink = post.postLink;
-        modalWatcher.modalPostTitle = post.postTitle;
-        modalWatcher.modalPostDescription = post.postDescription;
-        modalWatcher.visible = 'showed';
-      });
+    button.addEventListener('click', () => {
+      linkName.classList.remove('fw-bold');
+      linkName.classList.add('fw-normal', 'link-secondary');
+
+      readBtn.textContent = i18next.t('readBtn');
+      closeBtn.textContent = i18next.t('closeBtn');
+
+      modalWatcher.modalPostLink = post.postLink;
+      modalWatcher.modalPostTitle = post.postTitle;
+      modalWatcher.modalPostDescription = post.postDescription;
+      modalWatcher.visible = 'showed';
     });
   });
 };
 
-const request = (link) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`)
+/*
+const request = (link) => axios.get(`${allOriginsLink}${link}`)
   .then((response) => response)
   .catch((error) => {
     throw error;
   });
+*/
+
+const request = (link) => {
+  const timeout = 1000;
+  const source = axios.CancelToken.source();
+
+  const timeoutId = setTimeout(() => {
+    source.cancel('Timeout exceeded');
+  }, timeout);
+
+  return axios.get(`${allOriginsLink}${link}`)
+    .then((response) => {
+      if (!response) {
+        clearTimeout(timeoutId);
+        console.log(response);
+      }
+      console.log(response);
+      submitBtn.disabled = false;
+      return response;
+    })
+    .catch((error) => {
+      submitBtn.disabled = false;
+      if (axios.isCancel(error)) {
+        throw new Error('networkError');
+      }
+      throw error;
+    });
+};
 
 const parser = (xmlString) => {
   try {
@@ -214,6 +252,7 @@ const parser = (xmlString) => {
     const doc = newParser.parseFromString(xmlString, 'application/xhtml+xml');
     const postItems = doc.querySelectorAll('channel > item');
     const feedTitle = doc.querySelector('channel > title').textContent;
+    const feedDescription = doc.querySelector('channel > description').textContent;
     const feedPosts = [];
     postItems.forEach((post) => {
       const postTitle = post.querySelector('title').textContent;
@@ -225,7 +264,7 @@ const parser = (xmlString) => {
         postLink,
       });
     });
-    return [feedTitle, feedPosts];
+    return [feedTitle, feedDescription, feedPosts];
   } catch (e) {
     throw new Error(e.message = 'notRss');
   }
@@ -235,21 +274,19 @@ const postsWatcher = onChange(postsState, () => {
   postsRender();
 });
 
-const updateFeed = (link, feedId) => {
+const updateFeed = (link) => {
   const delay = 5000;
   let timer = setTimeout(function update() {
-    axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`)
+    axios.get(`${allOriginsLink}${link}`)
       .then((responseData) => {
-        const [, feedPosts] = parser(responseData.data.contents);
+        const [, , feedPosts] = parser(responseData.data.contents);
         feedPosts.forEach((item) => {
           if (!postsState.postsName.includes(item.postTitle)) {
-            postsWatcher.postsName.push(item.postTitle);
             const newPost = item;
             newPost.postId = postIdCounter;
+            postsWatcher.postsName.push(item.postTitle);
             postsWatcher.postsData.push(newPost);
             postIdCounter += 1;
-            console.log(newPost);
-            console.log(feedsState);
             console.log(postsState);
           }
         });
@@ -266,16 +303,12 @@ const feedsWatcher = onChange(feedsState, () => {
   if (feedsState.length > 0) {
     feedsState.forEach((feed) => {
       const link = feed.feedLink;
-      const id = feed.feedId;
-      updateFeed(link, id);
+      updateFeed(link);
     });
   }
 });
 
 export default () => {
-  if (feedsState.length === 0) {
-    feedIdCounter = 0;
-  }
   const subTitleEl = document.querySelector('.lead');
   const labelEl = document.querySelector('[for="url-input"]');
   const exampleEl = document.getElementById('example');
@@ -304,31 +337,31 @@ export default () => {
     e.preventDefault();
     feedbackEl.innerHTML = '';
     stateWatcher.linkValidation = 'none';
+    stateWatcher.errors = '';
     const link = inputEl.value;
+    submitBtn.disabled = true;
     schema.isValid(link).then((response) => {
       if (!response) {
         inputEl.value = link;
         throw new Error('invalidUrl');
       }
     }).then(() => request(link)).then((responseData) => {
-      const [feedTitle, feedPosts] = parser(responseData.data.contents);
-
+      const [feedTitle, feedDescription, feedPosts] = parser(responseData.data.contents);
       feedsState.forEach((item) => {
         if (item.feedTitle === feedTitle) {
           throw new Error('doubledChannel');
         }
       });
-      const feedId = feedIdCounter;
-      feedIdCounter += 1;
       feedsWatcher.push({
-        feedId, feedTitle, feedLink: link,
+        feedTitle, feedLink: link, feedDescription,
       });
       feedPosts.forEach((item) => {
         postsWatcher.postsName.push(item.postTitle);
         item.postId = postIdCounter;
         postIdCounter += 1;
       });
-      postsWatcher.postsData.push({ feedId, feedPosts });
+      const posts = [...postsState.postsData, ...feedPosts];
+      postsWatcher.postsData = posts;
       stateWatcher.linkValidation = 'valid';
       inputEl.value = '';
       inputEl.classList.remove('is-invalid');
@@ -353,26 +386,3 @@ export default () => {
       });
   });
 };
-
-/*
-const updateFeed = (link, feedId) => {
-  const delay = 5000;
-  let timer = setTimeout(function update() {
-    axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`)
-      .then((responseData) => {
-        const [, feedPosts] = parser(responseData.data.contents);
-        feedPosts.forEach((item) => {
-          if (!postsState.postsName.includes(item.postTitle)) {
-            feedPosts.forEach((post) => {
-              postsWatcher.postsName.push(post.postTitle);
-            });
-            postsWatcher.postsData.push({ feedId, feedPosts });
-          }
-        });
-        timer = setTimeout(update, delay);
-      }).catch(() => {
-        stateWatcher.errors = 'unknownError';
-      });
-  }, delay);
-};
-*/
