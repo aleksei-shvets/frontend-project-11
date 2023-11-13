@@ -10,6 +10,7 @@ export default {
       notConnected: 'Ошибка сети',
       unknownError: 'Что-то пошло не так... Некоторые фиды не удалось обновить',
     },
+    mainTitle: 'RSS агрегатор',
     subTitle: 'Начните читать RSS сегодня! Это легко, это красиво.',
     inputHint: 'Ссылка RSS',
     exampleLink: 'Пример: https://ru.hexlet.io/lessons.rss',
