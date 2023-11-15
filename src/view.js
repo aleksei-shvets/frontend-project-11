@@ -1,9 +1,25 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable no-unused-vars */
 import onChange from 'on-change';
 import * as yup from 'yup';
 import i18next from 'i18next';
 import axios from 'axios';
 import ru from './locale/ru.js';
+import {
+  changesClasses, setAttributes, changesAttributes, generateHTMLElement,
+} from './functions.js';
 
+i18next.init({
+  lng: 'ru',
+  debug: true,
+  resources: {
+    ru,
+  },
+});
+
+let postIdCounter = 0;
+
+const mainTitle = document.querySelector('h1');
 const feedbackEl = document.querySelector('.feedback');
 const inputEl = document.getElementById('url-input');
 const formEl = document.querySelector('.rss-form');
@@ -15,10 +31,20 @@ const closeBtn = document.getElementById('close-btn');
 const closeIcon = document.querySelector('.btn-close');
 const body = document.querySelector('body');
 const submitBtn = document.querySelector('[type="submit"]');
+const subTitleEl = document.querySelector('.lead');
+const labelEl = document.querySelector('[for="url-input"]');
+const exampleEl = document.getElementById('example');
+const addButtonEl = document.querySelector('[aria-label="add"]');
 
 const allOriginsLink = 'https://allorigins.hexlet.app/get?disableCache=true&url=';
 
-let postIdCounter = 0;
+readBtn.textContent = i18next.t('readBtn');
+closeBtn.textContent = i18next.t('closeBtn');
+mainTitle.textContent = i18next.t('mainTitle');
+subTitleEl.textContent = i18next.t('subTitle');
+labelEl.textContent = i18next.t('inputHint');
+exampleEl.textContent = i18next.t('exampleLink');
+addButtonEl.textContent = i18next.t('add');
 
 const state = {
   linkValidation: 'none',
@@ -39,53 +65,35 @@ const postsState = {
   readPosts: [],
 };
 
-i18next.init({
-  lng: 'ru',
-  debug: true,
-  resources: {
-    ru,
-  },
-});
-
 const schema = yup.string().url();
 
 const errorsRender = () => {
   feedbackEl.textContent = (state.errors !== '') ? i18next.t(`errors.${state.errors}`) : '';
-  feedbackEl.classList.add('text-danger');
-  feedbackEl.classList.remove('text-success');
+  changesClasses(feedbackEl, ['text-success'], ['text-danger']);
 };
 
 const feedsRender = () => {
-  if (state.errors.length > 0) return;
   const feedsContainer = document.querySelector('.feeds');
   feedsContainer.innerHTML = '';
 
-  const feedsColumn = document.createElement('div');
-  feedsColumn.classList.add('card', 'border-0');
-
-  const feedTitleDiv = document.createElement('div');
-  feedTitleDiv.classList.add('card-body');
-
-  const feedsBlockTitle = document.createElement('h2');
-  feedsBlockTitle.classList.add('card-title', 'h4');
+  const feedsColumn = generateHTMLElement('div', ['card', 'border-0']);
+  const feedTitleDiv = generateHTMLElement('div', ['card-body']);
+  const feedsBlockTitle = generateHTMLElement('h2', ['card-title', 'h4']);
   feedsBlockTitle.textContent = i18next.t('feedTitle');
 
-  const feeds = document.createElement('ul');
-  feeds.classList.add('list-group', 'border-0', 'rounded-0');
+  const feeds = generateHTMLElement('ul', ['list-group', 'border-0', 'rounded-0']);
 
   feedTitleDiv.append(feedsBlockTitle);
   feedsColumn.append(feedTitleDiv, feeds);
   feedsContainer.append(feedsColumn);
 
   feedsState.reverse().forEach((feed) => {
-    const feedItem = document.createElement('li');
-    feedItem.classList.add('list-group-item', 'border-0', 'border-end-0');
-    const feedTitle = document.createElement('h3');
-    feedTitle.classList.add('h6', 'm-0');
-    const feedDescription = document.createElement('p');
-    feedDescription.classList.add('m-0', 'small', 'text-black-50');
+    const feedItem = generateHTMLElement('li', ['list-group-item', 'border-0', 'border-end-0']);
+    const feedTitle = generateHTMLElement('h3', ['h6', 'm-0']);
     feedTitle.textContent = feed.feedTitle;
+    const feedDescription = generateHTMLElement('p', ['m-0', 'small', 'text-black-50']);
     feedDescription.textContent = feed.feedDescription;
+
     feedItem.append(feedTitle, feedDescription);
     feeds.append(feedItem);
   });
@@ -97,10 +105,8 @@ const feedbackMessageRender = (currentStatus) => {
   }
   if (currentStatus === 'valid') {
     feedbackEl.textContent = i18next.t('feedback.uploadRss');
-    feedbackEl.classList.remove('text-danger');
-    feedbackEl.classList.add('text-success');
-    inputEl.classList.remove('is-invalid');
-    inputEl.classList.add('is-valid');
+    changesClasses(feedbackEl, ['text-danger'], ['text-success']);
+    changesClasses(inputEl, ['is-invalid'], ['is-valid']);
   }
 };
 
@@ -117,26 +123,37 @@ const modalWatcher = onChange(modalState, (path, current) => {
   if (path === 'visible') {
     if (current === 'showed') {
       body.classList.add('modal-open');
-      body.setAttribute('style', 'overflow: hidden; padding-right: 13px;');
-      modal.classList.add('show');
-      modal.setAttribute('style', 'display: block');
-      modal.setAttribute('data-bs-backdrop', 'true');
-      modal.setAttribute('aria-modal', 'true');
-      modal.removeAttribute('aria-hidden');
+      setAttributes(body, {
+        role: 'dialog',
+        style: 'overflow: hidden; padding-right: 13px;',
+      });
+
+      modal.classList.add('show', 'fade');
+      changesAttributes(
+        modal,
+        ['aria-hidden'],
+        {
+          style: 'display: block',
+          'data-bs-backdrop': true,
+          'aria-modal': true,
+        },
+      );
 
       modalTitle.textContent = modalState.modalPostTitle;
       modalBody.textContent = modalState.modalPostDescription;
       readBtn.href = modalState.modalPostLink;
-      const backdrop = document.createElement('div');
-      backdrop.classList.add('modal-backdrop', 'fade', 'show');
+
+      const backdrop = generateHTMLElement('div', ['modal-backdrop', 'fade', 'show']);
+
       body.appendChild(backdrop);
     }
     if (current === 'hidden') {
       const backdropDivEl = document.querySelector('.modal-backdrop');
       modal.classList.remove('show');
-      modal.removeAttribute('style', 'display: block');
-      modal.removeAttribute('aria-modal');
-      modal.setAttribute('aria-hidden', 'true');
+      body.classList.remove('modal-open', 'style');
+      body.removeAttribute('style');
+
+      changesAttributes(modal, ['aria-modal', 'style'], { 'aria-hidden': 'true' });
       backdropDivEl.remove();
       modalState.modalPostLink = '';
       modalState.modalPostTitle = '';
@@ -144,64 +161,70 @@ const modalWatcher = onChange(modalState, (path, current) => {
     }
   }
 });
+const readLinksWatcher = onChange(postsState, (path) => {
+  if (path === 'readPosts') {
+    postsState.readPosts.forEach((idItem) => {
+      const link = document.querySelector(`[data-link-id="${idItem}"]`);
+      changesClasses(link, ['fw-bold'], ['fw-normal', 'link-secondary']);
+    });
+  }
+});
 
 const postsRender = () => {
-  if (state.errors.length > 0) return;
   const postsContainer = document.querySelector('.posts');
   postsContainer.innerHTML = '';
 
-  const postsColumn = document.createElement('div');
-  postsColumn.classList.add('card', 'border-0');
-
-  const postsTitleDiv = document.createElement('div');
-  postsTitleDiv.classList.add('card-body');
-
-  const postsBlockTitle = document.createElement('h2');
-  postsBlockTitle.classList.add('card-title', 'h4');
+  const postsColumn = generateHTMLElement('div', ['card', 'border-0']);
+  const postsTitleDiv = generateHTMLElement('div', 'card-body');
+  const postsBlockTitle = generateHTMLElement('h2', ['card-title', 'h4']);
   postsBlockTitle.textContent = i18next.t('postTitle');
 
   postsTitleDiv.append(postsBlockTitle);
 
-  const posts = document.createElement('ul');
-  posts.classList.add('list-group', 'border-0', 'rounded-0');
+  const posts = generateHTMLElement('ul', ['list-group', 'border-0', 'rounded-0']);
 
-  postsColumn.append(postsTitleDiv);
-  postsColumn.append(posts);
+  postsColumn.append(postsTitleDiv, posts);
   postsContainer.append(postsColumn);
 
   postsState.postsData.reverse().forEach((post) => {
-    const postItem = document.createElement('li');
-    postItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
-    const linkName = document.createElement('a');
+    const postItem = generateHTMLElement('li', [
+      'list-group-item',
+      'd-flex',
+      'justify-content-between',
+      'align-items-start',
+      'border-0',
+      'border-end-0',
+    ]);
+
+    const linkName = generateHTMLElement(
+      'a',
+      ['fw-bold', 'pe-3'],
+      { target: '_blank', rel: 'noopener noreferrer' },
+    );
+
     linkName.textContent = post.postTitle;
-    linkName.classList.add('fw-bold');
-    linkName.setAttribute('target', '_blank');
-    linkName.setAttribute('rel', 'noopener noreferrer');
     linkName.href = post.postLink;
+    linkName.dataset.linkId = post.postId;
+    if (postsState.readPosts.includes(post.postId)) {
+      changesClasses(linkName, ['fw-bold'], ['fw-normal', 'link-secondary']);
+    }
 
     linkName.addEventListener('click', () => {
-      postsState.readPosts.push(post.postId);
-      linkName.classList.remove('fw-bold');
-      linkName.classList.add('fw-normal', 'link-secondary');
+      readLinksWatcher.readPosts.push(post.postId);
     });
 
-    const button = document.createElement('button');
+    const button = generateHTMLElement(
+      'button',
+      ['btn', 'btn-outline-primary', 'btn-sm'],
+      { type: 'button', rel: 'noopener noreferrer' },
+    );
     button.textContent = i18next.t('viewing');
-    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    button.setAttribute('type', 'button');
-    button.setAttribute('rel', 'noopener noreferrer');
 
     postItem.append(linkName, button);
     posts.append(postItem);
 
-    console.log(postsState);
-
     button.addEventListener('click', () => {
-      linkName.classList.remove('fw-bold');
-      linkName.classList.add('fw-normal', 'link-secondary');
-
-      readBtn.textContent = i18next.t('readBtn');
-      closeBtn.textContent = i18next.t('closeBtn');
+      readLinksWatcher.readPosts.push(post.postId);
 
       modalWatcher.modalPostLink = post.postLink;
       modalWatcher.modalPostTitle = post.postTitle;
@@ -210,6 +233,10 @@ const postsRender = () => {
     });
   });
 };
+
+const postsWatcher = onChange(postsState, () => {
+  postsRender();
+});
 
 /*
 const request = (link) => axios.get(`${allOriginsLink}${link}`)
@@ -220,7 +247,7 @@ const request = (link) => axios.get(`${allOriginsLink}${link}`)
 */
 
 const request = (link) => {
-  const timeout = 1000;
+  const timeout = 10000;
   const source = axios.CancelToken.source();
 
   const timeoutId = setTimeout(() => {
@@ -231,16 +258,17 @@ const request = (link) => {
     .then((response) => {
       if (!response) {
         clearTimeout(timeoutId);
-        console.log(response);
       }
-      console.log(response);
       submitBtn.disabled = false;
       return response;
     })
     .catch((error) => {
       submitBtn.disabled = false;
+      if (error.request || error.response) {
+        throw new Error('notConnected');
+      }
       if (axios.isCancel(error)) {
-        throw new Error('networkError');
+        throw new Error('notConnected');
       }
       throw error;
     });
@@ -270,10 +298,6 @@ const parser = (xmlString) => {
   }
 };
 
-const postsWatcher = onChange(postsState, () => {
-  postsRender();
-});
-
 const updateFeed = (link) => {
   const delay = 5000;
   let timer = setTimeout(function update() {
@@ -287,7 +311,6 @@ const updateFeed = (link) => {
             postsWatcher.postsName.push(item.postTitle);
             postsWatcher.postsData.push(newPost);
             postIdCounter += 1;
-            console.log(postsState);
           }
         });
         timer = setTimeout(update, delay);
@@ -309,16 +332,6 @@ const feedsWatcher = onChange(feedsState, () => {
 });
 
 export default () => {
-  const subTitleEl = document.querySelector('.lead');
-  const labelEl = document.querySelector('[for="url-input"]');
-  const exampleEl = document.getElementById('example');
-  const addButtonEl = document.querySelector('[aria-label="add"]');
-
-  subTitleEl.textContent = i18next.t('subTitle');
-  labelEl.textContent = i18next.t('inputHint');
-  exampleEl.textContent = i18next.t('exampleLink');
-  addButtonEl.textContent = i18next.t('add');
-
   closeBtn.addEventListener('click', () => {
     modalWatcher.visible = 'hidden';
   });
@@ -332,7 +345,6 @@ export default () => {
       modalWatcher.visible = 'hidden';
     }
   });
-
   formEl.addEventListener('submit', (e) => {
     e.preventDefault();
     feedbackEl.innerHTML = '';
@@ -364,24 +376,16 @@ export default () => {
       postsWatcher.postsData = posts;
       stateWatcher.linkValidation = 'valid';
       inputEl.value = '';
-      inputEl.classList.remove('is-invalid');
-      inputEl.classList.remove('is-valid');
-      console.log(feedsState);
-      console.log(postsState);
+      changesClasses(inputEl, ['is-invalid'], ['is-valid']);
     })
       .catch((error) => {
-        if (error.message === 'doubledChannel') {
-          stateWatcher.errors = 'doubledChannel';
-        }
-        if (error.message === 'invalidUrl') {
-          stateWatcher.errors = 'invalidUrl';
-        }
-        if (error.message === 'notRss') {
-          stateWatcher.errors = 'notRss';
-        }
-        if (error.request || error.response) {
-          stateWatcher.errors = 'notConnected';
-        }
+        const errorMessages = {
+          doubledChannel: 'doubledChannel',
+          invalidUrl: 'invalidUrl',
+          notRss: 'notRss',
+          notConnected: 'notConnected',
+        };
+        stateWatcher.errors = errorMessages[error.message];
         inputEl.value = link;
       });
   });
