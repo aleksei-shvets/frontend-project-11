@@ -1,5 +1,7 @@
 # RSS aggregator
 
+[link](https://rss-aggregtor-al-shvets.vercel.app/)
+
 Name | Badge
 :-----: | :----:
 Hexlet tests and linter status | [![Actions Status](https://github.com/aleksei-shvets/frontend-project-11/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/aleksei-shvets/frontend-project-11/actions)
