@@ -5,7 +5,7 @@ export default {
     },
     errors: {
       invalidUrl: 'Ссылка должна быть валидным URL',
-      doubledChannel: 'Канал уже добавлен',
+      doubledChannel: 'RSS уже существует',
       notRss: 'Ресурс не содержит валидный RSS',
       notConnected: 'Ошибка сети',
       unknownError: 'Что-то пошло не так... Некоторые фиды не удалось обновить',
