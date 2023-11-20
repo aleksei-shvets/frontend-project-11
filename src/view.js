@@ -113,7 +113,7 @@ const feedsRender = (feedsState) => {
   feedsColumn.append(feedTitleDiv, feeds);
   feedsContainer.append(feedsColumn);
 
-  feedsState.reverse().forEach((feed) => {
+  feedsState.forEach((feed) => {
     const feedItem = generateHTMLElement('li', ['list-group-item', 'border-0', 'border-end-0']);
     const feedTitle = generateHTMLElement('h3', ['h6', 'm-0']);
     feedTitle.textContent = feed.feedTitle;
@@ -150,6 +150,7 @@ const request = (link) => {
       return response;
     })
     .catch((error) => {
+      submitBtn.disabled = false;
       if (error.request || error.response) {
         throw new Error('notConnected');
       }
@@ -308,7 +309,7 @@ export default () => {
   };
 
   const feedsWatcher = onChange(feedsState, () => {
-    feedsRender(feedsState.feedItems);
+    feedsRender(feedsState.feedItems.reverse());
     if (feedsState.length > 0) {
       feedsState.addedFeeds.forEach((link) => {
         updateFeed(link);
@@ -321,49 +322,56 @@ export default () => {
     feedbackEl.innerHTML = '';
     stateWatcher.linkValidation = 'none';
     stateWatcher.errors = '';
-    if (inputEl.value === '') {
-      throw new Error('emptyField');
-    }
     const link = inputEl.value;
-    console.log(link);
     submitBtn.disabled = true;
-    schema.isValid(link).then((response) => {
+    try {
+      if (link === '') {
+        throw new Error('emptyField');
+      }
       if (feedsState.addedFeeds.includes(link)) {
         throw new Error('doubledChannel');
       }
-      if (!response) {
-        inputEl.value = link;
-        throw new Error('invalidUrl');
-      }
-    }).then(() => request(link)).then((responseData) => {
-      const [feedTitle, feedDescription, newPosts] = parser(responseData.data.contents);
-      feedsWatcher.feedItems.push({
-        feedTitle, feedDescription,
-      });
-      feedsWatcher.addedFeeds.push(link);
-      newPosts.forEach((item) => {
-        postsWatcher.postsName.push(item.postTitle);
-        item.postId = postIdCounter;
-        postIdCounter += 1;
-      });
-      const posts = [...postsState.postsData, ...newPosts];
-      postsWatcher.postsData = posts;
-      stateWatcher.linkValidation = 'valid';
-      inputEl.value = '';
-      changesClasses(inputEl, ['is-invalid'], ['is-valid']);
-    })
-      .catch((error) => {
-        const errorMessages = {
-          doubledChannel: 'doubledChannel',
-          invalidUrl: 'invalidUrl',
-          notRss: 'notRss',
-          notConnected: 'notConnected',
-          emptyField: 'emptyField',
-        };
-        stateWatcher.errors = errorMessages[error.message];
-        inputEl.value = link;
-        submitBtn.disabled = false;
-      });
+      schema.isValid(link).then((response) => {
+        if (!response) {
+          inputEl.value = link;
+          throw new Error('invalidUrl');
+        }
+      }).then(() => request(link))
+        .then((responseData) => {
+          const [feedTitle, feedDescription, newPosts] = parser(responseData.data.contents);
+          feedsWatcher.feedItems.push({
+            feedTitle, feedDescription,
+          });
+          feedsWatcher.addedFeeds.push(link);
+          newPosts.forEach((item) => {
+            postsWatcher.postsName.push(item.postTitle);
+            item.postId = postIdCounter;
+            postIdCounter += 1;
+          });
+          const posts = [...postsState.postsData, ...newPosts];
+          postsWatcher.postsData = posts;
+          stateWatcher.linkValidation = 'valid';
+          inputEl.value = '';
+          changesClasses(inputEl, ['is-invalid'], ['is-valid']);
+        })
+        .catch((error) => {
+          const errorMessages = {
+            invalidUrl: 'invalidUrl',
+            notRss: 'notRss',
+            notConnected: 'notConnected',
+          };
+          stateWatcher.errors = errorMessages[error.message];
+          submitBtn.disabled = false;
+        });
+    } catch (err) {
+      const errorMessages = {
+        doubledChannel: 'doubledChannel',
+        emptyField: 'emptyField',
+      };
+      submitBtn.disabled = false;
+      stateWatcher.errors = errorMessages[err.message];
+      inputEl.value = link;
+    }
   });
 
   closeBtn.addEventListener('click', () => {
