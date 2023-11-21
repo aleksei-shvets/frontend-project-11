@@ -8,7 +8,7 @@ export default {
       doubledChannel: 'RSS уже существует',
       notRss: 'Ресурс не содержит валидный RSS',
       notConnected: 'Ошибка сети',
-      unknownError: 'Что-то пошло не так... Некоторые фиды не удалось обновить',
+      unknownError: 'Что-то пошло не так',
       emptyField: 'Не должно быть пустым',
     },
     mainTitle: 'RSS агрегатор',
