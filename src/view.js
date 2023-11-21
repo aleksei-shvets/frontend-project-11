@@ -193,49 +193,58 @@ export default () => {
     }
   });
 
-  const modalWatcher = onChange(modalState, (path, current) => {
+  const showModal = () => {
     const {
       modalTitle, body, modalBody, readBtn, modal,
     } = staticElements;
 
+    body.classList.add('modal-open');
+    setAttributes(body, {
+      role: 'dialog',
+      style: 'overflow: hidden; padding-right: 13px;',
+    });
+
+    modal.classList.add('show', 'fade');
+    changesAttributes(
+      modal,
+      ['aria-hidden'],
+      {
+        style: 'display: block',
+        'data-bs-backdrop': true,
+        'aria-modal': true,
+      },
+    );
+
+    modalTitle.textContent = modalState.modalPostTitle;
+    modalBody.textContent = modalState.modalPostDescription;
+    readBtn.href = modalState.modalPostLink;
+
+    const backdrop = generateHTMLElement('div', ['modal-backdrop', 'fade', 'show']);
+
+    body.appendChild(backdrop);
+  };
+
+  const hideModal = () => {
+    const { body, modal } = staticElements;
+    const backdropDivEl = document.querySelector('.modal-backdrop');
+    modal.classList.remove('show');
+    body.classList.remove('modal-open', 'style');
+    body.removeAttribute('style');
+
+    changesAttributes(modal, ['aria-modal', 'style'], { 'aria-hidden': 'true' });
+    backdropDivEl.remove();
+    modalState.modalPostLink = '';
+    modalState.modalPostTitle = '';
+    modalState.modalPostDescription = '';
+  };
+
+  const modalWatcher = onChange(modalState, (path, current) => {
     if (path === 'visible') {
       if (current === 'showed') {
-        body.classList.add('modal-open');
-        setAttributes(body, {
-          role: 'dialog',
-          style: 'overflow: hidden; padding-right: 13px;',
-        });
-
-        modal.classList.add('show', 'fade');
-        changesAttributes(
-          modal,
-          ['aria-hidden'],
-          {
-            style: 'display: block',
-            'data-bs-backdrop': true,
-            'aria-modal': true,
-          },
-        );
-
-        modalTitle.textContent = modalState.modalPostTitle;
-        modalBody.textContent = modalState.modalPostDescription;
-        readBtn.href = modalState.modalPostLink;
-
-        const backdrop = generateHTMLElement('div', ['modal-backdrop', 'fade', 'show']);
-
-        body.appendChild(backdrop);
+        showModal();
       }
       if (current === 'hidden') {
-        const backdropDivEl = document.querySelector('.modal-backdrop');
-        modal.classList.remove('show');
-        body.classList.remove('modal-open', 'style');
-        body.removeAttribute('style');
-
-        changesAttributes(modal, ['aria-modal', 'style'], { 'aria-hidden': 'true' });
-        backdropDivEl.remove();
-        modalState.modalPostLink = '';
-        modalState.modalPostTitle = '';
-        modalState.modalPostDescription = '';
+        hideModal();
       }
     }
   });
