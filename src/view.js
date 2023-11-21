@@ -9,6 +9,7 @@ import {
   changesClasses, setAttributes, changesAttributes, generateHTMLElement,
 } from './functions.js';
 import parser from './parser.js';
+import feedsRender from './feedsRender.js';
 
 i18next.init({
   lng: 'ru',
@@ -18,48 +19,55 @@ i18next.init({
   },
 });
 
+const texts = {
+  feedsListTitle: i18next.t('feedTitle'),
+};
+
 let postIdCounter = 0;
 
-const mainTitle = document.querySelector('h1');
-const feedbackEl = document.querySelector('.feedback');
-const inputEl = document.getElementById('url-input');
-const formEl = document.querySelector('.rss-form');
-const modal = document.getElementById('modal');
-const modalTitle = document.querySelector('.modal-title');
-const modalBody = document.querySelector('.modal-body');
-const readBtn = document.getElementById('read-btn');
-const closeBtn = document.getElementById('close-btn');
-const closeIcon = document.querySelector('.btn-close');
-const body = document.querySelector('body');
-const submitBtn = document.querySelector('[type="submit"]');
-const subTitleEl = document.querySelector('.lead');
-const labelEl = document.querySelector('[for="url-input"]');
-const exampleEl = document.getElementById('example');
-const addButtonEl = document.querySelector('[aria-label="add"]');
+const staticElements = {
+  mainTitle: document.querySelector('h1'),
+  feedbackEl: document.querySelector('.feedback'),
+  inputEl: document.getElementById('url-input'),
+  formEl: document.querySelector('.rss-form'),
+  modal: document.getElementById('modal'),
+  modalTitle: document.querySelector('.modal-title'),
+  modalBody: document.querySelector('.modal-body'),
+  readBtn: document.getElementById('read-btn'),
+  closeBtn: document.getElementById('close-btn'),
+  closeIcon: document.querySelector('.btn-close'),
+  body: document.querySelector('body'),
+  submitBtn: document.querySelector('[type="submit"]'),
+  subTitleEl: document.querySelector('.lead'),
+  labelEl: document.querySelector('[for="url-input"]'),
+  exampleEl: document.getElementById('example'),
+  addButtonEl: document.querySelector('[aria-label="add"]'),
+};
 
 const allOriginsLink = 'https://allorigins.hexlet.app/get?disableCache=true&url=';
 
 const schema = yup.string().url();
 
-readBtn.textContent = i18next.t('readBtn');
-closeBtn.textContent = i18next.t('closeBtn');
-mainTitle.textContent = i18next.t('mainTitle');
-subTitleEl.textContent = i18next.t('subTitle');
-labelEl.textContent = i18next.t('inputHint');
-exampleEl.textContent = i18next.t('exampleLink');
-addButtonEl.textContent = i18next.t('add');
+staticElements.readBtn.textContent = i18next.t('readBtn');
+staticElements.closeBtn.textContent = i18next.t('closeBtn');
+staticElements.mainTitle.textContent = i18next.t('mainTitle');
+staticElements.subTitleEl.textContent = i18next.t('subTitle');
+staticElements.labelEl.textContent = i18next.t('inputHint');
+staticElements.exampleEl.textContent = i18next.t('exampleLink');
+staticElements.addButtonEl.textContent = i18next.t('add');
 
 const errorsRender = (state) => {
-  feedbackEl.textContent = (state.errors !== '') ? i18next.t(`errors.${state.errors}`) : '';
-  changesClasses(feedbackEl, ['text-success'], ['text-danger']);
+  staticElements.feedbackEl.textContent = (state.errors !== '') ? i18next.t(`errors.${state.errors}`) : '';
+  changesClasses(staticElements.feedbackEl, ['text-success'], ['text-danger']);
 };
 
 const feedbackMessageRender = (currentStatus) => {
+  const { feedbackEl, inputEl } = staticElements;
   if (currentStatus === 'none') {
     feedbackEl.textContent = '';
   }
   if (currentStatus === 'valid') {
-    feedbackEl.textContent = i18next.t('feedback.uploadRss');
+    staticElements.feedbackEl.textContent = i18next.t('feedback.uploadRss');
     changesClasses(feedbackEl, ['text-danger'], ['text-success']);
     changesClasses(inputEl, ['is-invalid'], ['is-valid']);
   }
@@ -96,33 +104,6 @@ const postElementsGen = (post, postsState) => {
   button.textContent = i18next.t('viewing');
 
   return [postItem, linkName, button];
-};
-
-const feedsRender = (feedsState) => {
-  const feedsContainer = document.querySelector('.feeds');
-  feedsContainer.innerHTML = '';
-
-  const feedsColumn = generateHTMLElement('div', ['card', 'border-0']);
-  const feedTitleDiv = generateHTMLElement('div', ['card-body']);
-  const feedsBlockTitle = generateHTMLElement('h2', ['card-title', 'h4']);
-  feedsBlockTitle.textContent = i18next.t('feedTitle');
-
-  const feeds = generateHTMLElement('ul', ['list-group', 'border-0', 'rounded-0']);
-
-  feedTitleDiv.append(feedsBlockTitle);
-  feedsColumn.append(feedTitleDiv, feeds);
-  feedsContainer.append(feedsColumn);
-
-  feedsState.forEach((feed) => {
-    const feedItem = generateHTMLElement('li', ['list-group-item', 'border-0', 'border-end-0']);
-    const feedTitle = generateHTMLElement('h3', ['h6', 'm-0']);
-    feedTitle.textContent = feed.feedTitle;
-    const feedDescription = generateHTMLElement('p', ['m-0', 'small', 'text-black-50']);
-    feedDescription.textContent = feed.feedDescription;
-
-    feedItem.append(feedTitle, feedDescription);
-    feeds.append(feedItem);
-  });
 };
 
 /*
@@ -165,12 +146,11 @@ const request = (link) => {
 
 const request = (link) => axios.get(`${allOriginsLink}${link}`)
   .then((response) => {
-    console.log(response);
-    submitBtn.disabled = false;
+    staticElements.submitBtn.disabled = false;
     return response;
   })
   .catch((error) => {
-    submitBtn.disabled = false;
+    staticElements.submitBtn.disabled = false;
     if (axios.isAxiosError(error)) {
       throw new Error('notConnected');
     }
@@ -179,6 +159,9 @@ const request = (link) => axios.get(`${allOriginsLink}${link}`)
   });
 
 export default () => {
+  const {
+    formEl, feedbackEl, submitBtn, inputEl,
+  } = staticElements;
   const state = {
     linkValidation: 'none',
     errors: '',
@@ -211,6 +194,10 @@ export default () => {
   });
 
   const modalWatcher = onChange(modalState, (path, current) => {
+    const {
+      modalTitle, body, modalBody, readBtn, modal,
+    } = staticElements;
+
     if (path === 'visible') {
       if (current === 'showed') {
         body.classList.add('modal-open');
@@ -306,7 +293,6 @@ export default () => {
     let timer = setTimeout(function update() {
       request(link)
         .then((responseData) => {
-          console.log(responseData);
           const [, , feedPosts] = parser(responseData.data.contents);
           feedPosts.forEach((item) => {
             if (!postsState.postsName.includes(item.postTitle)) {
@@ -325,12 +311,10 @@ export default () => {
   };
 
   const feedsWatcher = onChange(feedsState, () => {
-    feedsRender(feedsState.feedItems.reverse());
-    if (feedsState.length > 0) {
-      feedsState.addedFeeds.forEach((link) => {
-        updateFeed(link);
-      });
-    }
+    feedsRender(feedsState.feedItems.reverse(), texts);
+    feedsState.addedFeeds.forEach((link) => {
+      updateFeed(link);
+    });
   });
 
   formEl.addEventListener('submit', (e) => {
@@ -369,36 +353,29 @@ export default () => {
           stateWatcher.linkValidation = 'valid';
           inputEl.value = '';
           changesClasses(inputEl, ['is-invalid'], ['is-valid']);
+          console.log(feedsState);
         })
         .catch((error) => {
-          const errorMessages = {
-            invalidUrl: 'invalidUrl',
-            notRss: 'notRss',
-            notConnected: 'notConnected',
-          };
-          stateWatcher.errors = errorMessages[error.message];
+          stateWatcher.errors = error.message;
           submitBtn.disabled = false;
+          inputEl.value = link;
         });
     } catch (err) {
-      const errorMessages = {
-        doubledChannel: 'doubledChannel',
-        emptyField: 'emptyField',
-      };
       submitBtn.disabled = false;
-      stateWatcher.errors = errorMessages[err.message];
+      stateWatcher.errors = err.message;
       inputEl.value = link;
     }
   });
 
-  closeBtn.addEventListener('click', () => {
+  staticElements.closeBtn.addEventListener('click', () => {
     modalWatcher.visible = 'hidden';
   });
 
-  closeIcon.addEventListener('click', () => {
+  staticElements.closeIcon.addEventListener('click', () => {
     modalWatcher.visible = 'hidden';
   });
 
-  modal.addEventListener('click', (event) => {
+  staticElements.modal.addEventListener('click', (event) => {
     if (event.target.className !== 'modal') {
       modalWatcher.visible = 'hidden';
     }
