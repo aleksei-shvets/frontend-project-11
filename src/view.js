@@ -133,6 +133,7 @@ const request = (link) => axios.get(`${allOriginsLink}${link}`)
   });
 */
 
+/*
 const request = (link) => {
   const timeout = 10000;
   const source = axios.CancelToken.source();
@@ -160,6 +161,22 @@ const request = (link) => {
       throw error;
     });
 };
+*/
+
+const request = (link) => axios.get(`${allOriginsLink}${link}`)
+  .then((response) => {
+    console.log(response);
+    submitBtn.disabled = false;
+    return response;
+  })
+  .catch((error) => {
+    submitBtn.disabled = false;
+    if (axios.isAxiosError(error)) {
+      throw new Error('notConnected');
+    }
+    error.message = 'unknownError';
+    throw error;
+  });
 
 export default () => {
   const state = {
@@ -287,7 +304,7 @@ export default () => {
   const updateFeed = (link) => {
     const delay = 5000;
     let timer = setTimeout(function update() {
-      axios.get(`${allOriginsLink}${link}`)
+      request(link)
         .then((responseData) => {
           console.log(responseData);
           const [, , feedPosts] = parser(responseData.data.contents);
@@ -302,8 +319,7 @@ export default () => {
           });
           timer = setTimeout(update, delay);
         }).catch((err) => {
-          console.log(err);
-          stateWatcher.errors = 'unknownError';
+          throw err;
         });
     }, delay);
   };
