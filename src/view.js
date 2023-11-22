@@ -100,7 +100,7 @@ export default () => {
 
   const readLinksWatcher = onChange(postsState, (path) => {
     if (path === 'readPosts') {
-      renderWatchedLinks();
+      renderWatchedLinks(postsState.readPosts);
     }
   });
 
@@ -129,7 +129,7 @@ export default () => {
     const postsListTitleText = i18next.t('postTitle');
     const { postsContainer } = staticElements;
     postsRender(postsContainer, postsState.postsData, postsListTitleText, postButtonText);
-    renderWatchedLinks();
+    renderWatchedLinks(postsState.readPosts);
     addListeners();
   });
 
