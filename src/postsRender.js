@@ -1,8 +1,7 @@
 import { generateHTMLElement } from './functions.js';
 
-export default (postsList, texts) => {
-  const { postsListTitleText } = texts;
-  const postsContainer = document.querySelector('.posts');
+export default (container, postsList, postsListTitleText, postButtonText) => {
+  const postsContainer = container;
   postsContainer.innerHTML = '';
 
   const postsColumn = generateHTMLElement('div', ['card', 'border-0']);
@@ -18,7 +17,6 @@ export default (postsList, texts) => {
   postsContainer.append(postsColumn);
 
   postsList.reverse().forEach((post) => {
-    const { postButtonText } = texts;
     const postItem = generateHTMLElement('li', [
       'list-group-item',
       'd-flex',
