@@ -17,10 +17,10 @@ test.describe('error and feedback mesages test', () => {
   });
 
   test('doubled channel', async ({ page }) => {
-    await inputEl.fill('http://lenta.ru/rss/news');
+    await inputEl.fill('https://www.votpusk.ru/news.xml');
     await page.getByLabel('add').click();
     await page.waitForTimeout(5000);
-    await inputEl.fill('http://lenta.ru/rss/news');
+    await inputEl.fill('https://www.votpusk.ru/news.xml');
     await page.getByLabel('add').click();
     await page.waitForTimeout(5000);
     await expect(feedbacEl).toHaveText('RSS уже существует');
@@ -33,13 +33,13 @@ test.describe('error and feedback mesages test', () => {
   });
 
   test('successful download RSS', async ({ page }) => {
-    await inputEl.fill('http://lenta.ru/rss/news');
+    await inputEl.fill('https://www.votpusk.ru/news.xml');
     await page.getByLabel('add').click();
     await expect(feedbacEl).toHaveText('RSS успешно загружен');
   });
 
   test('notRSS', async ({ page }) => {
-    await inputEl.fill('http://lenta.ru/rss/ne');
+    await inputEl.fill('https://www.votpusk.ru/news');
     await page.getByLabel('add').click();
     await page.waitForTimeout(1000);
     await expect(feedbacEl).toHaveText('Ресурс не содержит валидный RSS');
