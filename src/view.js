@@ -3,13 +3,16 @@
 import onChange from 'on-change';
 import * as yup from 'yup';
 import i18next from 'i18next';
-import axios from 'axios';
 import ru from './locale/ru.js';
 import {
   changesClasses, setAttributes, changesAttributes, generateHTMLElement,
 } from './functions.js';
 import parser from './parser.js';
 import feedsRender from './feedsRender.js';
+import postsRender from './postsRender.js';
+import request from './request.js';
+import feedbackMessageRender from './feedbackMessageRender.js';
+import errorsRender from './errorsRender.js';
 
 i18next.init({
   lng: 'ru',
@@ -21,6 +24,9 @@ i18next.init({
 
 const texts = {
   feedsListTitle: i18next.t('feedTitle'),
+  postButtonText: i18next.t('viewing'),
+  postsListTitleText: i18next.t('postTitle'),
+  uploadRss: i18next.t('feedback.uploadRss'),
 };
 
 let postIdCounter = 0;
@@ -44,8 +50,6 @@ const staticElements = {
   addButtonEl: document.querySelector('[aria-label="add"]'),
 };
 
-const allOriginsLink = 'https://allorigins.hexlet.app/get?disableCache=true&url=';
-
 const schema = yup.string().url();
 
 staticElements.readBtn.textContent = i18next.t('readBtn');
@@ -56,112 +60,11 @@ staticElements.labelEl.textContent = i18next.t('inputHint');
 staticElements.exampleEl.textContent = i18next.t('exampleLink');
 staticElements.addButtonEl.textContent = i18next.t('add');
 
-const errorsRender = (state) => {
-  staticElements.feedbackEl.textContent = (state.errors !== '') ? i18next.t(`errors.${state.errors}`) : '';
-  changesClasses(staticElements.feedbackEl, ['text-success'], ['text-danger']);
-};
-
-const feedbackMessageRender = (currentStatus) => {
-  const { feedbackEl, inputEl } = staticElements;
-  if (currentStatus === 'none') {
-    feedbackEl.textContent = '';
-  }
-  if (currentStatus === 'valid') {
-    staticElements.feedbackEl.textContent = i18next.t('feedback.uploadRss');
-    changesClasses(feedbackEl, ['text-danger'], ['text-success']);
-    changesClasses(inputEl, ['is-invalid'], ['is-valid']);
-  }
-};
-
-const postElementsGen = (post, postsState) => {
-  const postItem = generateHTMLElement('li', [
-    'list-group-item',
-    'd-flex',
-    'justify-content-between',
-    'align-items-start',
-    'border-0',
-    'border-end-0',
-  ]);
-
-  const linkName = generateHTMLElement(
-    'a',
-    ['fw-bold', 'pe-5'],
-    { target: '_blank', rel: 'noopener noreferrer' },
-  );
-
-  linkName.textContent = post.postTitle;
-  linkName.href = post.postLink;
-  linkName.dataset.linkId = post.postId;
-  if (postsState.readPosts.includes(post.postId)) {
-    changesClasses(linkName, ['fw-bold'], ['fw-normal', 'link-secondary']);
-  }
-
-  const button = generateHTMLElement(
-    'button',
-    ['btn', 'btn-outline-primary', 'btn-sm'],
-    { type: 'button', rel: 'noopener noreferrer' },
-  );
-  button.textContent = i18next.t('viewing');
-
-  return [postItem, linkName, button];
-};
-
-/*
-const request = (link) => axios.get(`${allOriginsLink}${link}`)
-  .then((response) => response)
-  .catch((error) => {
-    throw error;
-  });
-*/
-
-/*
-const request = (link) => {
-  const timeout = 10000;
-  const source = axios.CancelToken.source();
-
-  const timeoutId = setTimeout(() => {
-    source.cancel('Timeout exceeded');
-  }, timeout);
-
-  return axios.get(`${allOriginsLink}${link}`)
-    .then((response) => {
-      if (!response) {
-        clearTimeout(timeoutId);
-      }
-      submitBtn.disabled = false;
-      return response;
-    })
-    .catch((error) => {
-      submitBtn.disabled = false;
-      if (error.request || error.response) {
-        throw new Error('notConnected');
-      }
-      if (axios.isCancel(error)) {
-        throw new Error('notConnected');
-      }
-      throw error;
-    });
-};
-*/
-
-const request = (link) => axios.get(`${allOriginsLink}${link}`)
-  .then((response) => {
-    staticElements.submitBtn.disabled = false;
-    return response;
-  })
-  .catch((error) => {
-    staticElements.submitBtn.disabled = false;
-    if (axios.isAxiosError(error)) {
-      throw new Error('notConnected');
-    }
-    error.message = 'unknownError';
-    throw error;
-  });
-
 export default () => {
   const {
     formEl, feedbackEl, submitBtn, inputEl,
   } = staticElements;
+
   const state = {
     linkValidation: 'none',
     errors: '',
@@ -186,10 +89,11 @@ export default () => {
 
   const stateWatcher = onChange(state, (path, current) => {
     if (path === 'linkValidation') {
-      feedbackMessageRender(current);
+      feedbackMessageRender(current, staticElements, texts);
     }
     if (path === 'errors') {
-      errorsRender(state);
+      const errorText = (state.errors !== '') ? i18next.t(`errors.${state.errors}`) : '';
+      errorsRender(errorText, staticElements);
     }
   });
 
@@ -248,61 +152,56 @@ export default () => {
       }
     }
   });
+
   const readLinksWatcher = onChange(postsState, (path) => {
     if (path === 'readPosts') {
       postsState.readPosts.forEach((idItem) => {
-        const link = document.querySelector(`[data-link-id="${idItem}"]`);
+        const link = document.querySelector(`[data-post-id="${idItem}"]`);
         changesClasses(link, ['fw-bold'], ['fw-normal', 'link-secondary']);
       });
     }
   });
 
-  const postsRender = () => {
-    const postsContainer = document.querySelector('.posts');
-    postsContainer.innerHTML = '';
-
-    const postsColumn = generateHTMLElement('div', ['card', 'border-0']);
-    const postsTitleDiv = generateHTMLElement('div', ['card-body']);
-    const postsBlockTitle = generateHTMLElement('h2', ['card-title', 'h4']);
-    postsBlockTitle.textContent = i18next.t('postTitle');
-
-    postsTitleDiv.append(postsBlockTitle);
-
-    const postsUlElement = generateHTMLElement('ul', ['list-group', 'border-0', 'rounded-0']);
-
-    postsColumn.append(postsTitleDiv, postsUlElement);
-    postsContainer.append(postsColumn);
-
-    postsState.postsData.reverse().forEach((post) => {
-      const [postItem, linkName, button] = postElementsGen(post, postsState);
-      linkName.addEventListener('click', () => {
-        readLinksWatcher.readPosts.push(post.postId);
+  const addListeners = () => {
+    const aElements = document.querySelectorAll('.post-link');
+    const buttonElements = document.querySelectorAll('.post-button');
+    aElements.forEach((item) => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.postId;
+        readLinksWatcher.readPosts.push(id);
       });
-
-      postItem.append(linkName, button);
-      postsUlElement.append(postItem);
-
-      button.addEventListener('click', () => {
-        readLinksWatcher.readPosts.push(post.postId);
-
-        modalWatcher.modalPostLink = post.postLink;
-        modalWatcher.modalPostTitle = post.postTitle;
-        modalWatcher.modalPostDescription = post.postDescription;
+    });
+    buttonElements.forEach((item) => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.postId;
+        readLinksWatcher.readPosts.push(id);
+        const clickedPost = postsState.postsData
+          .find((post) => (Number(id) === Number(post.postId)));
+        modalWatcher.modalPostLink = clickedPost.postLink;
+        modalWatcher.modalPostTitle = clickedPost.postTitle;
+        modalWatcher.modalPostDescription = clickedPost.postDescription;
         modalWatcher.visible = 'showed';
       });
     });
   };
 
   const postsWatcher = onChange(postsState, () => {
-    postsRender();
+    postsRender(postsState.postsData, texts);
+    postsState.readPosts.forEach((idItem) => {
+      const link = document.querySelector(`[data-post-id="${idItem}"]`);
+      changesClasses(link, ['fw-bold'], ['fw-normal', 'link-secondary']);
+    });
+    addListeners();
   });
 
   const updateFeed = (link) => {
     const delay = 5000;
-    let timer = setTimeout(function update() {
-      request(link)
+
+    const update = () => {
+      request(link, staticElements)
         .then((responseData) => {
           const [, , feedPosts] = parser(responseData.data.contents);
+
           feedPosts.forEach((item) => {
             if (!postsState.postsName.includes(item.postTitle)) {
               const newPost = item;
@@ -312,15 +211,20 @@ export default () => {
               postIdCounter += 1;
             }
           });
-          timer = setTimeout(update, delay);
-        }).catch((err) => {
-          throw err;
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+        .finally(() => {
+          setTimeout(update, delay);
         });
-    }, delay);
+    };
+
+    setTimeout(update, delay);
   };
 
   const feedsWatcher = onChange(feedsState, () => {
-    feedsRender(feedsState.feedItems.reverse(), texts);
+    feedsRender(feedsState.feedItems, texts);
     feedsState.addedFeeds.forEach((link) => {
       updateFeed(link);
     });
@@ -345,7 +249,7 @@ export default () => {
           inputEl.value = link;
           throw new Error('invalidUrl');
         }
-      }).then(() => request(link))
+      }).then(() => request(link, staticElements))
         .then((responseData) => {
           const [feedTitle, feedDescription, newPosts] = parser(responseData.data.contents);
           feedsWatcher.feedItems.push({
@@ -362,7 +266,6 @@ export default () => {
           stateWatcher.linkValidation = 'valid';
           inputEl.value = '';
           changesClasses(inputEl, ['is-invalid'], ['is-valid']);
-          console.log(feedsState);
         })
         .catch((error) => {
           stateWatcher.errors = error.message;
