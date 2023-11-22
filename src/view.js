@@ -4,15 +4,15 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import i18next from 'i18next';
 import ru from './locale/ru.js';
-import {
-  changesClasses, setAttributes, changesAttributes, generateHTMLElement,
-} from './functions.js';
+import { changesClasses } from './functions.js';
 import parser from './parser.js';
 import feedsRender from './feedsRender.js';
 import postsRender from './postsRender.js';
 import request from './request.js';
 import feedbackMessageRender from './feedbackMessageRender.js';
 import errorsRender from './errorsRender.js';
+import modalRender from './modalRender.js';
+import renderWatchedLinks from './renderWatchedLinks.js';
 
 i18next.init({
   lng: 'ru',
@@ -21,13 +21,6 @@ i18next.init({
     ru,
   },
 });
-
-const texts = {
-  feedsListTitle: i18next.t('feedTitle'),
-  postButtonText: i18next.t('viewing'),
-  postsListTitleText: i18next.t('postTitle'),
-  uploadRss: i18next.t('feedback.uploadRss'),
-};
 
 let postIdCounter = 0;
 
@@ -48,6 +41,7 @@ const staticElements = {
   labelEl: document.querySelector('[for="url-input"]'),
   exampleEl: document.getElementById('example'),
   addButtonEl: document.querySelector('[aria-label="add"]'),
+  postsContainer: document.querySelector('.posts'),
 };
 
 const schema = yup.string().url();
@@ -89,7 +83,8 @@ export default () => {
 
   const stateWatcher = onChange(state, (path, current) => {
     if (path === 'linkValidation') {
-      feedbackMessageRender(current, staticElements, texts);
+      const uploadRssMessage = i18next.t('feedback.uploadRss');
+      feedbackMessageRender(current, staticElements, uploadRssMessage);
     }
     if (path === 'errors') {
       const errorText = (state.errors !== '') ? i18next.t(`errors.${state.errors}`) : '';
@@ -97,100 +92,44 @@ export default () => {
     }
   });
 
-  const showModal = () => {
-    const {
-      modalTitle, body, modalBody, readBtn, modal,
-    } = staticElements;
-
-    body.classList.add('modal-open');
-    setAttributes(body, {
-      role: 'dialog',
-      style: 'overflow: hidden; padding-right: 13px;',
-    });
-
-    modal.classList.add('show', 'fade');
-    changesAttributes(
-      modal,
-      ['aria-hidden'],
-      {
-        style: 'display: block',
-        'data-bs-backdrop': true,
-        'aria-modal': true,
-      },
-    );
-
-    modalTitle.textContent = modalState.modalPostTitle;
-    modalBody.textContent = modalState.modalPostDescription;
-    readBtn.href = modalState.modalPostLink;
-
-    const backdrop = generateHTMLElement('div', ['modal-backdrop', 'fade', 'show']);
-
-    body.appendChild(backdrop);
-  };
-
-  const hideModal = () => {
-    const { body, modal } = staticElements;
-    const backdropDivEl = document.querySelector('.modal-backdrop');
-    modal.classList.remove('show');
-    body.classList.remove('modal-open', 'style');
-    body.removeAttribute('style');
-
-    changesAttributes(modal, ['aria-modal', 'style'], { 'aria-hidden': 'true' });
-    backdropDivEl.remove();
-    modalState.modalPostLink = '';
-    modalState.modalPostTitle = '';
-    modalState.modalPostDescription = '';
-  };
-
   const modalWatcher = onChange(modalState, (path, current) => {
     if (path === 'visible') {
-      if (current === 'showed') {
-        showModal();
-      }
-      if (current === 'hidden') {
-        hideModal();
-      }
+      modalRender(current, modalState, staticElements);
     }
   });
 
   const readLinksWatcher = onChange(postsState, (path) => {
     if (path === 'readPosts') {
-      postsState.readPosts.forEach((idItem) => {
-        const link = document.querySelector(`[data-post-id="${idItem}"]`);
-        changesClasses(link, ['fw-bold'], ['fw-normal', 'link-secondary']);
-      });
+      renderWatchedLinks();
     }
   });
 
   const addListeners = () => {
-    const aElements = document.querySelectorAll('.post-link');
-    const buttonElements = document.querySelectorAll('.post-button');
-    aElements.forEach((item) => {
-      item.addEventListener('click', () => {
-        const id = item.dataset.postId;
+    const { postsContainer } = staticElements;
+    postsContainer.addEventListener('click', (e) => {
+      const clickedElement = e.target;
+      const clickedElementName = clickedElement.nodeName;
+      const id = clickedElement.dataset.postId;
+      if (!postsState.readPosts.includes(id)) {
         readLinksWatcher.readPosts.push(id);
-      });
-    });
-    buttonElements.forEach((item) => {
-      item.addEventListener('click', () => {
-        const id = item.dataset.postId;
-        readLinksWatcher.readPosts.push(id);
+      }
+      if (clickedElementName === 'BUTTON') {
         const clickedPost = postsState.postsData
           .find((post) => (Number(id) === Number(post.postId)));
         modalWatcher.modalPostLink = clickedPost.postLink;
         modalWatcher.modalPostTitle = clickedPost.postTitle;
         modalWatcher.modalPostDescription = clickedPost.postDescription;
         modalWatcher.visible = 'showed';
-      });
+      }
     });
   };
 
   const postsWatcher = onChange(postsState, () => {
-    postsRender(postsState.postsData, texts);
-    postsState.readPosts.forEach((idItem) => {
-      const link = document.querySelector(`[data-post-id="${idItem}"]`);
-      changesClasses(link, ['fw-bold'], ['fw-normal', 'link-secondary']);
-    });
+    const postButtonText = i18next.t('viewing');
+    const postsListTitleText = i18next.t('postTitle');
+    const { postsContainer } = staticElements;
+    postsRender(postsContainer, postsState.postsData, postsListTitleText, postButtonText);
+    renderWatchedLinks();
     addListeners();
   });
 
@@ -224,7 +163,8 @@ export default () => {
   };
 
   const feedsWatcher = onChange(feedsState, () => {
-    feedsRender(feedsState.feedItems, texts);
+    const feedsListTitle = i18next.t('feedTitle');
+    feedsRender(feedsState.feedItems, feedsListTitle);
     feedsState.addedFeeds.forEach((link) => {
       updateFeed(link);
     });
