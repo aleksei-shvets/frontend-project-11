@@ -7,6 +7,7 @@ const path = require('path');
 
 module.exports = {
   devtool: 'source-map',
+  mode: 'production',
   entry: path.resolve(__dirname, './src/index.js'),
   output: {
     filename: '[name].[contenehash].js',
