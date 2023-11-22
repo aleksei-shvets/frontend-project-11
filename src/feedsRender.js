@@ -1,8 +1,7 @@
 import { generateHTMLElement } from './functions.js';
 
-export default (state, texts) => {
+export default (state, feedsListTitle) => {
   const currentState = [...state];
-  const { feedsListTitle } = texts;
   const feedsContainer = document.querySelector('.feeds');
   feedsContainer.innerHTML = '';
 
