@@ -13,8 +13,6 @@
   "author": "Aleksei Shvets",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "@types/node": "^20.9.2",
     "autoprefixer": "^10.4.16",
     "css-loader": "^6.8.1",
     "css-minimizer-webpack-plugin": "^5.0.1",
