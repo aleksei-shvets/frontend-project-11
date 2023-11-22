@@ -35,6 +35,7 @@ test.describe('error and feedback mesages test', () => {
   test('successful download RSS', async ({ page }) => {
     await inputEl.fill('https://www.votpusk.ru/news.xml');
     await page.getByLabel('add').click();
+    await page.waitForTimeout(3000);
     await expect(feedbacEl).toHaveText('RSS успешно загружен');
   });
 
