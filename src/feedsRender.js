@@ -1,6 +1,7 @@
 import { generateHTMLElement } from './functions.js';
 
-export default (feedsState, texts) => {
+export default (state, texts) => {
+  const currentState = [...state];
   const { feedsListTitle } = texts;
   const feedsContainer = document.querySelector('.feeds');
   feedsContainer.innerHTML = '';
@@ -16,7 +17,7 @@ export default (feedsState, texts) => {
   feedsColumn.append(feedTitleDiv, feeds);
   feedsContainer.append(feedsColumn);
 
-  feedsState.forEach((feed) => {
+  currentState.reverse().forEach((feed) => {
     const feedItem = generateHTMLElement('li', ['list-group-item', 'border-0', 'border-end-0']);
     const feedTitle = generateHTMLElement('h3', ['h6', 'm-0']);
     feedTitle.textContent = feed.feedTitle;
