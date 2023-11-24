@@ -56,7 +56,7 @@ staticElements.addButtonEl.textContent = i18next.t('add');
 
 export default () => {
   const {
-    formEl, feedbackEl, submitBtn, inputEl,
+    formEl, feedbackEl, submitBtn, inputEl, modal,
   } = staticElements;
 
   const state = {
@@ -219,6 +219,14 @@ export default () => {
     }
   });
 
+  modal.addEventListener('click', (event) => {
+    console.log(event.target.className);
+    if (event.target.className !== 'modal' || event.target.nodeName === 'BUTTON') {
+      modalWatcher.visible = 'hidden';
+    }
+  });
+
+/*
   staticElements.closeBtn.addEventListener('click', () => {
     modalWatcher.visible = 'hidden';
   });
@@ -232,4 +240,5 @@ export default () => {
       modalWatcher.visible = 'hidden';
     }
   });
+  */
 };
