@@ -220,25 +220,8 @@ export default () => {
   });
 
   modal.addEventListener('click', (event) => {
-    console.log(event.target.className);
     if (event.target.className !== 'modal' || event.target.nodeName === 'BUTTON') {
       modalWatcher.visible = 'hidden';
     }
   });
-
-/*
-  staticElements.closeBtn.addEventListener('click', () => {
-    modalWatcher.visible = 'hidden';
-  });
-
-  staticElements.closeIcon.addEventListener('click', () => {
-    modalWatcher.visible = 'hidden';
-  });
-
-  staticElements.modal.addEventListener('click', (event) => {
-    if (event.target.className !== 'modal') {
-      modalWatcher.visible = 'hidden';
-    }
-  });
-  */
 };

@@ -12,15 +12,5 @@ export default (currentStatus, staticElements, uploadRssMessage) => {
       changesClasses(inputEl, ['is-invalid'], ['is-valid']);
     },
   };
-  /*
-  if (currentStatus === 'none') {
-    feedbackEl.textContent = '';
-  }
-  if (currentStatus === 'valid') {
-    feedbackEl.textContent = uploadRssMessage;
-    changesClasses(feedbackEl, ['text-danger'], ['text-success']);
-    changesClasses(inputEl, ['is-invalid'], ['is-valid']);
-  }
-  */
   return validation[currentStatus]();
 };
