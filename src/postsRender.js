@@ -28,7 +28,7 @@ export default (container, postsList, postsListTitleText, postButtonText) => {
 
     const linkName = generateHTMLElement(
       'a',
-      ['fw-bold', 'pe-5', 'post-link'],
+      ['fw-bold'],
       { target: '_blank', rel: 'noopener noreferrer' },
     );
 
