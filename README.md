@@ -1,6 +1,6 @@
-# [RSS aggregator]
+## RSS aggregator
 
-## Go to app >>>(<https://rss-aggregtor-al-shvets.vercel.app/>)
+### [Go to app >>>](<https://rss-aggregtor-al-shvets.vercel.app/>)
 
 Name | Badge
 :-----: | :----:
