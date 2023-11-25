@@ -1,8 +1,9 @@
+/* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable no-param-reassign */
-/* eslint-disable no-unused-vars */
 import onChange from 'on-change';
 import * as yup from 'yup';
 import i18next from 'i18next';
+import uniqueId from 'lodash.uniqueid';
 import ru from './locale/ru.js';
 import { changesClasses } from './functions.js';
 import parser from './parser.js';
@@ -21,8 +22,6 @@ i18next.init({
     ru,
   },
 });
-
-let postIdCounter = 0;
 
 const staticElements = {
   mainTitle: document.querySelector('h1'),
@@ -144,10 +143,9 @@ export default () => {
           feedPosts.forEach((item) => {
             if (!postsState.postsName.includes(item.postTitle)) {
               const newPost = item;
-              newPost.postId = postIdCounter;
+              newPost.postId = uniqueId();
               postsWatcher.postsName.push(item.postTitle);
               postsWatcher.postsData.push(newPost);
-              postIdCounter += 1;
             }
           });
         })
@@ -198,8 +196,7 @@ export default () => {
           feedsWatcher.addedFeeds.push(link);
           newPosts.forEach((item) => {
             postsWatcher.postsName.push(item.postTitle);
-            item.postId = postIdCounter;
-            postIdCounter += 1;
+            item.postId = uniqueId();
           });
           const posts = [...postsState.postsData, ...newPosts];
           postsWatcher.postsData = posts;
