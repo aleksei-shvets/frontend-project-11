@@ -182,8 +182,8 @@ export default () => {
       if (feedsState.addedFeeds.includes(link)) {
         throw new Error('doubledChannel');
       }
-      schema.isValid(link).then((response) => {
-        if (!response) {
+      schema.isValid(link).then((validLink) => {
+        if (!validLink) {
           inputEl.value = link;
           throw new Error('invalidUrl');
         }
