@@ -5,10 +5,6 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "bdev": "npx webpack --mode development",
-    "bprod": "npx webpack --mode production",
-    "serve": "npx webpack serve --mode development",
-    "test": "npx playwright test"
   },
   "author": "Aleksei Shvets",
   "license": "ISC",
