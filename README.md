@@ -1,6 +1,6 @@
 ## RSS aggregator
 
-### [Go to app >](<https://rss-aggregtor-al-shvets.vercel.app/>)
+### [Demo 🌐](<https://rss-aggregtor-al-shvets.vercel.app/>)
 
 [![Actions Status](https://github.com/aleksei-shvets/frontend-project-11/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/aleksei-shvets/frontend-project-11/actions)
 [![Maintainability](https://api.codeclimate.com/v1/badges/67e0356c794b61de0645/maintainability)](https://codeclimate.com/github/aleksei-shvets/frontend-project-11/maintainability)
