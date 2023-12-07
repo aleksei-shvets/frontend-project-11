@@ -240,7 +240,7 @@ export default (state) => onChange(state, (path, current) => {
       feedsRender(current);
       break;
     default:
-      throw new Error('unknownError');
+      break;
   }
 });
 
