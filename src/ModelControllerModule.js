@@ -59,34 +59,6 @@ export default () => {
     },
   };
 
-  const updateFeed = (link) => {
-    const delay = 5000;
-
-    const update = () => {
-      request(link)
-        .then((responseData) => {
-          const [, , feedPosts] = parser(responseData.data.contents);
-
-          feedPosts.forEach((item) => {
-            if (!state.postsState.postsName.includes(item.postTitle)) {
-              const newPost = item;
-              newPost.postId = uniqueId();
-              state.postsState.postsName.push(item.postTitle);
-              state.postsState.postsData.push(newPost);
-            }
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => {
-          setTimeout(update, delay);
-        });
-    };
-
-    setTimeout(update, delay);
-  };
-
   const modalWatcher = onChange(state.modalState, (path, current) => {
     if (path === 'visible') {
       modalRender(current, state.modalState);
@@ -133,6 +105,34 @@ export default () => {
     renderWatchedLinks(state.postsState.readPosts);
     addListeners();
   });
+
+  const updateFeed = (link) => {
+    const delay = 5000;
+
+    const update = () => {
+      request(link)
+        .then((responseData) => {
+          const [, , feedPosts] = parser(responseData.data.contents);
+
+          feedPosts.forEach((item) => {
+            if (!postsWatcher.postsName.includes(item.postTitle)) {
+              const newPost = item;
+              newPost.postId = uniqueId();
+              postsWatcher.postsName.push(item.postTitle);
+              postsWatcher.postsData.push(newPost);
+            }
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+        .finally(() => {
+          setTimeout(update, delay);
+        });
+    };
+
+    setTimeout(update, delay);
+  };
 
   const feedsWatcher = onChange(state.feedsState, () => {
     feedsRender(state.feedsState.feedItems);
