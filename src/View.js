@@ -1,6 +1,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable no-param-reassign */
 
+import onChange from 'on-change';
 import i18next from 'i18next';
 import ru from './locale/ru.js';
 
@@ -116,8 +117,8 @@ const postsRender = (postsList) => {
   });
 };
 
-const showModal = (modalState) => {
-  const { modalPostTitle, modalPostDescription, modalPostLink } = modalState;
+const showModal = (state) => {
+  const { modalPostTitle, modalPostDescription, modalPostLink } = state;
   const {
     modalTitle, body, modalBody, readBtn, modal,
   } = staticElements;
@@ -159,17 +160,17 @@ const hideModal = () => {
   backdropDivEl.remove();
 };
 
-const modalRender = (currentStatus, modalState) => {
+const modalRender = (currentStatus, state) => {
   const render = {
-    showed: () => showModal(modalState),
+    showed: () => showModal(state),
     hidden: () => hideModal(),
   };
   render[currentStatus]();
 };
 
-const errorsRender = (errorText) => {
+const errorsRender = (errorMessage) => {
   const { feedbackEl, inputEl } = staticElements;
-  feedbackEl.textContent = (errorText !== '') ? i18next.t(`errors.${errorText}`) : '';
+  feedbackEl.textContent = (errorMessage !== '') ? i18next.t(`errors.${errorMessage}`) : '';
   changesClasses(feedbackEl, ['text-success'], ['text-danger']);
   changesClasses(inputEl, ['is-valid'], ['is-invalid']);
 };
@@ -217,12 +218,30 @@ const feedsRender = (feedsState) => {
   });
 };
 
-export {
-  feedbackMessageRender,
-  feedsRender,
-  postsRender,
-  errorsRender,
-  modalRender,
-  renderWatchedLinks,
-  staticElements,
-};
+export default (state) => onChange(state, (path, current) => {
+  switch (path) {
+    case 'modalVisible':
+      modalRender(current, state);
+      break;
+    case 'errorMessage':
+      errorsRender(current);
+      break;
+    case 'linkValidation':
+      feedbackMessageRender(current);
+      break;
+    case 'readPosts':
+      renderWatchedLinks(current);
+      break;
+    case 'postsData':
+      postsRender(current);
+      renderWatchedLinks(state.readPosts);
+      break;
+    case 'feedItems':
+      feedsRender(current);
+      break;
+    default:
+      throw new Error('unknownError');
+  }
+});
+
+export { staticElements };
