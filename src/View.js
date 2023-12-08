@@ -1,6 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
-/* eslint-disable no-param-reassign */
-
 import onChange from 'on-change';
 import i18next from 'i18next';
 import ru from './locale/ru.js';
