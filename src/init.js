@@ -30,8 +30,9 @@ const getUrl = (link) => {
 };
 
 const requestRssChannel = (link, watcheredState) => axios.get(getUrl(link))
-  .then((responseData) => {
-    const { feedTitle, feedDescription, newPosts } = xmlParser(responseData.data.contents);
+  .then((responseData) => xmlParser(responseData.data.contents))
+  .then((data) => {
+    const { feedTitle, feedDescription, newPosts } = data;
     const feedId = uniqueId();
     watcheredState.content.feedItems.push({
       feedTitle, feedDescription, link, feedId,
@@ -48,10 +49,12 @@ const requestRssChannel = (link, watcheredState) => axios.get(getUrl(link))
   })
   .catch((error) => {
     if (axios.isAxiosError(error)) {
-      throw new Error('notConnected');
+      watcheredState.form.errorMessage = 'notConnected';
+      // throw new Error('notConnected');
+    } else if (error.message === 'notRss') {
+      watcheredState.form.errorMessage = 'notRss';
+      // throw new Error('notRss');
     }
-    error.message = 'unknownError';
-    throw error;
   });
 
 const fetchNewPosts = (watcheredState) => {
@@ -74,8 +77,8 @@ const fetchNewPosts = (watcheredState) => {
           });
         });
       })
-      .catch((err) => {
-        throw err;
+      .catch((error) => {
+        throw error;
       })
       .finally(() => {
         setTimeout(update, delay);
@@ -176,10 +179,11 @@ export default () => {
           fetchNewPosts(watcheredState);
         })
         .catch((error) => {
-          console.log(error);
+          console.log(error)
           watcheredState.form.errorMessage = error.message;
           watcheredState.form.inputText = link;
           watcheredState.form.state = 'failed';
+          console.log(watcheredState)
         });
     });
 

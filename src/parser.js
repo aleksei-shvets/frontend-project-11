@@ -2,14 +2,14 @@ export default (xmlString) => {
   try {
     const newParser = new DOMParser();
     const doc = newParser.parseFromString(xmlString, 'application/xhtml+xml');
-    const parseError = doc.getElementsByTagName('parsererror');
-    if (parseError.length > 0) {
-      console.error(parseError[0].textContent);
-    }
     const postItems = doc.querySelectorAll('channel > item');
     const feedTitle = doc.querySelector('channel > title').textContent;
     const feedDescription = doc.querySelector('channel > description').textContent;
     const newPosts = [];
+    /* const parseError = doc.getElementsByTagName('parsererror');
+    if (parseError.length > 0) {
+      console.log(parseError[0].textContent);
+    } */
     postItems.forEach((post) => {
       const postTitle = post.querySelector('title').textContent;
       const postLink = post.querySelector('link').textContent;
