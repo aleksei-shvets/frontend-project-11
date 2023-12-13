@@ -2,6 +2,10 @@ export default (xmlString) => {
   try {
     const newParser = new DOMParser();
     const doc = newParser.parseFromString(xmlString, 'application/xhtml+xml');
+    const parseError = doc.getElementsByTagName('parsererror');
+    if (parseError.length > 0) {
+      console.error(parseError[0].textContent);
+    }
     const postItems = doc.querySelectorAll('channel > item');
     const feedTitle = doc.querySelector('channel > title').textContent;
     const feedDescription = doc.querySelector('channel > description').textContent;
@@ -16,7 +20,7 @@ export default (xmlString) => {
         postLink,
       });
     });
-    return [feedTitle, feedDescription, newPosts];
+    return { feedTitle, feedDescription, newPosts };
   } catch (e) {
     throw new Error('notRss');
   }
