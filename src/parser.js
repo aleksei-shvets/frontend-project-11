@@ -6,10 +6,10 @@ export default (xmlString) => {
     const feedTitle = doc.querySelector('channel > title').textContent;
     const feedDescription = doc.querySelector('channel > description').textContent;
     const newPosts = [];
-    /* const parseError = doc.getElementsByTagName('parsererror');
+    const parseError = doc.getElementsByTagName('parsererror');
     if (parseError.length > 0) {
       console.log(parseError[0].textContent);
-    } */
+    }
     postItems.forEach((post) => {
       const postTitle = post.querySelector('title').textContent;
       const postLink = post.querySelector('link').textContent;

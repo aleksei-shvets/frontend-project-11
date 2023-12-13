@@ -179,11 +179,9 @@ export default () => {
           fetchNewPosts(watcheredState);
         })
         .catch((error) => {
-          console.log(error)
           watcheredState.form.errorMessage = error.message;
           watcheredState.form.inputText = link;
           watcheredState.form.state = 'failed';
-          console.log(watcheredState)
         });
     });
 
