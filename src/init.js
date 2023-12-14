@@ -50,10 +50,9 @@ const requestRssChannel = (link, watcheredState) => axios.get(getUrl(link))
   .catch((error) => {
     if (axios.isAxiosError(error)) {
       watcheredState.form.errorMessage = 'notConnected';
-      // throw new Error('notConnected');
-    } else if (error.message === 'notRss') {
+    }
+    if (error.message === 'notRss') {
       watcheredState.form.errorMessage = 'notRss';
-      // throw new Error('notRss');
     }
   });
 
