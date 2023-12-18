@@ -56,7 +56,7 @@ export default (appState, staticElements, i18next) => {
     postsColumn.append(postsTitleDiv, postsUlElement);
     postsContainer.append(postsColumn);
 
-    postsList.reverse().forEach((post) => {
+    postsList.forEach((post) => {
       const postItem = generateHTMLElement('li', [
         'list-group-item',
         'd-flex',
@@ -88,8 +88,8 @@ export default (appState, staticElements, i18next) => {
     });
   };
 
-  const showModal = () => {
-    const { modalPostTitle, modalPostDescription, modalPostLink } = appState.modal;
+  const showModal = (appState) => {
+    const { visiblePostId } = appState.modal;
 
     body.classList.add('modal-open');
     setAttributes(body, {
@@ -107,10 +107,11 @@ export default (appState, staticElements, i18next) => {
         'aria-modal': true,
       },
     );
-
-    modalTitle.textContent = modalPostTitle;
-    modalBody.textContent = modalPostDescription;
-    readBtn.href = modalPostLink;
+    const clickedPost = appState.content.postsData
+      .find((post) => (Number(visiblePostId) === Number(post.postId)));
+    readBtn.href = clickedPost.postLink;
+    modalTitle.textContent = clickedPost.postTitle;
+    modalBody.textContent = clickedPost.postDescription;
 
     const backdrop = generateHTMLElement('div', ['modal-backdrop', 'fade', 'show']);
 
@@ -127,7 +128,7 @@ export default (appState, staticElements, i18next) => {
     backdropDivEl.remove();
   };
 
-  const renderModal = (currentStatus) => {
+  const renderModal = (currentStatus, appState) => {
     const render = {
       showed: () => showModal(appState),
       hidden: () => hideModal(),
@@ -180,7 +181,7 @@ export default (appState, staticElements, i18next) => {
     feedsColumn.append(feedTitleDiv, feeds);
     feedsContainer.append(feedsColumn);
 
-    currentState.reverse().forEach((feed) => {
+    currentState.forEach((feed) => {
       const feedItem = generateHTMLElement('li', ['list-group-item', 'border-0', 'border-end-0']);
       const feedTitle = generateHTMLElement('h3', ['h6', 'm-0']);
       feedTitle.textContent = feed.feedTitle;
