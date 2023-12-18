@@ -88,8 +88,8 @@ export default (appState, staticElements, i18next) => {
     });
   };
 
-  const showModal = (appState) => {
-    const { visiblePostId } = appState.modal;
+  const showModal = (state) => {
+    const { visiblePostId } = state.modal;
 
     body.classList.add('modal-open');
     setAttributes(body, {
@@ -107,7 +107,7 @@ export default (appState, staticElements, i18next) => {
         'aria-modal': true,
       },
     );
-    const clickedPost = appState.content.postsData
+    const clickedPost = state.content.postsData
       .find((post) => (Number(visiblePostId) === Number(post.postId)));
     readBtn.href = clickedPost.postLink;
     modalTitle.textContent = clickedPost.postTitle;
@@ -128,9 +128,9 @@ export default (appState, staticElements, i18next) => {
     backdropDivEl.remove();
   };
 
-  const renderModal = (currentStatus, appState) => {
+  const renderModal = (currentStatus, state) => {
     const render = {
-      showed: () => showModal(appState),
+      showed: () => showModal(state),
       hidden: () => hideModal(),
     };
     render[currentStatus]();

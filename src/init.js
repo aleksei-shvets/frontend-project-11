@@ -62,7 +62,8 @@ const fetchNewPosts = (watcheredState) => {
         console.log(responseData);
         const { newPosts } = xmlParser(responseData.data.contents);
         newPosts.forEach((post) => {
-          if (watcheredState.content.postsData.every((item) => item.postTitle !== post.postTitle)) {
+          if (watcheredState.content.postsData
+            .every((postItem) => postItem.postTitle !== post.postTitle)) {
             const newPost = post;
             newPost.postId = uniqueId();
             watcheredState.content.postsData.unshift(post);
@@ -81,11 +82,8 @@ const fetchNewPosts = (watcheredState) => {
 };
 
 const isValidLink = (link, watcheredState) => schema.validate(link)
-  .then((validLink) => {
-    if (validLink) {
-      return validLink;
-    }
-  }).catch((error) => {
+  .then((validLink) => validLink)
+  .catch((error) => {
     watcheredState.form.inputText = link;
     throw error;
   });
