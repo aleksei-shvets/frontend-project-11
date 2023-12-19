@@ -34,8 +34,8 @@ export default (appState, staticElements, i18next) => {
   } = staticElements;
 
   const renderWatchedLinks = (watchedLinksList) => {
-    watchedLinksList.forEach((idItem) => {
-      const link = document.querySelector(`[data-post-id="${idItem}"]`);
+    watchedLinksList.forEach((itemId) => {
+      const link = document.querySelector(`[data-post-id="${itemId}"]`);
       changesClasses(link, ['fw-bold'], ['fw-normal', 'link-secondary']);
     });
   };

@@ -59,7 +59,6 @@ const fetchNewPosts = (watcheredState) => {
   const update = () => {
     const promises = watcheredState.content.feedItems.map((item) => axios.get(getUrl(item.link))
       .then((responseData) => {
-        console.log(responseData);
         const { newPosts } = xmlParser(responseData.data.contents);
         newPosts.forEach((post) => {
           if (watcheredState.content.postsData
@@ -73,6 +72,7 @@ const fetchNewPosts = (watcheredState) => {
       .catch((error) => {
         throw error;
       }));
+
     Promise.all(promises)
       .finally(() => {
         setTimeout(update, delay);
@@ -123,51 +123,52 @@ export default () => {
     },
   };
 
-  initI18n().then((i18n) => {
-    const watcheredState = watcher(state, staticElements, i18n);
-    postsContainer.addEventListener('click', (e) => {
-      const clickedElement = e.target;
-      const clickedElementName = clickedElement.nodeName;
-      const id = clickedElement.dataset.postId;
-      if (!watcheredState.content.readPosts.includes(id)) {
-        watcheredState.content.readPosts.push(id);
-      }
-      if (clickedElementName === 'BUTTON') {
-        watcheredState.modal.visiblePostId = id;
-        watcheredState.modal.modalVisible = 'showed';
-      }
-    });
-    formEl.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const form = new FormData(e.target);
-      const link = form.get('url');
-      isValidLink(link, watcheredState)
-        .then(() => {
-          watcheredState.form.state = 'filling';
-          watcheredState.form.errorMessage = '';
-          watcheredState.form.inputText = '';
-          const links = watcheredState.content.feedItems.map((feedItem) => feedItem.link);
-          if (links.includes(link)) {
-            throw new Error('doubledChannel');
-          }
-        })
-        .then(() => {
-          watcheredState.form.state = 'processing';
-          requestRssChannel(link, watcheredState);
-        })
-        .catch((error) => {
-          watcheredState.form.errorMessage = error.message;
-          watcheredState.form.inputText = link;
-          watcheredState.form.state = 'failed';
-        });
-    });
+  initI18n()
+    .then((i18n) => {
+      const watcheredState = watcher(state, staticElements, i18n);
+      postsContainer.addEventListener('click', (e) => {
+        const clickedElement = e.target;
+        const clickedElementName = clickedElement.nodeName;
+        const id = clickedElement.dataset.postId;
+        if (!watcheredState.content.readPosts.includes(id)) {
+          watcheredState.content.readPosts.push(id);
+        }
+        if (clickedElementName === 'BUTTON') {
+          watcheredState.modal.visiblePostId = id;
+          watcheredState.modal.modalVisible = 'showed';
+        }
+      });
+      formEl.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const form = new FormData(e.target);
+        const link = form.get('url');
+        isValidLink(link, watcheredState)
+          .then(() => {
+            watcheredState.form.state = 'filling';
+            watcheredState.form.errorMessage = '';
+            watcheredState.form.inputText = '';
+            const links = watcheredState.content.feedItems.map((feedItem) => feedItem.link);
+            if (links.includes(link)) {
+              throw new Error('doubledChannel');
+            }
+          })
+          .then(() => {
+            watcheredState.form.state = 'processing';
+            requestRssChannel(link, watcheredState);
+          })
+          .catch((error) => {
+            watcheredState.form.errorMessage = error.message;
+            watcheredState.form.inputText = link;
+            watcheredState.form.state = 'failed';
+          });
+      });
 
-    modal.addEventListener('click', (event) => {
-      if (event.target.className !== 'modal' || event.target.nodeName === 'BUTTON') {
-        watcheredState.modal.modalVisible = 'hidden';
-        watcheredState.modal.visiblePostId = '';
-      }
+      modal.addEventListener('click', (event) => {
+        if (event.target.className !== 'modal' || event.target.nodeName === 'BUTTON') {
+          watcheredState.modal.modalVisible = 'hidden';
+          watcheredState.modal.visiblePostId = '';
+        }
+      });
+      fetchNewPosts(watcheredState);
     });
-    fetchNewPosts(watcheredState);
-  });
 };
