@@ -1,3 +1,4 @@
+// import 'bootstrap';
 import axios from 'axios';
 import i18next from 'i18next';
 import uniqueId from 'lodash.uniqueid';
@@ -24,7 +25,8 @@ const staticElements = {
 };
 
 const getUrl = (link) => {
-  const url = new URL('https://allorigins.hexlet.app/get?disableCache=true');
+  const url = new URL('https://allorigins.hexlet.app/get');
+  url.searchParams.set('disableCache', 'true');
   url.searchParams.set('url', link);
   return url.href;
 };
