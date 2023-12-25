@@ -1,3 +1,4 @@
+import bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import onChange from 'on-change';
 
 const changesClasses = (element, deletedClasses = [], addedClasses = []) => {
@@ -9,10 +10,10 @@ const setAttributes = (element, attributes = {}) => {
   Object.keys(attributes).forEach((key) => element.setAttribute(key, attributes[key]));
 };
 
-const changesAttributes = (element, deletedAttributes = [], addedAttributes = {}) => {
+/* const changesAttributes = (element, deletedAttributes = [], addedAttributes = {}) => {
   deletedAttributes.forEach((deletedAttribute) => element.removeAttribute(deletedAttribute));
   setAttributes(element, addedAttributes);
-};
+}; */
 
 const generateHTMLElement = (elementName, classes = [], attributes = {}) => {
   const newElement = document.createElement(elementName);
@@ -24,7 +25,6 @@ const generateHTMLElement = (elementName, classes = [], attributes = {}) => {
 export default (appState, staticElements, i18next) => {
   const {
     modalTitle,
-    body,
     modalBody,
     readBtn,
     modal,
@@ -88,52 +88,21 @@ export default (appState, staticElements, i18next) => {
     });
   };
 
-  const showModal = (state) => {
-    const { visiblePostId } = state.modal;
-
-    body.classList.add('modal-open');
-    setAttributes(body, {
-      role: 'dialog',
-      style: 'overflow: hidden; padding-right: 13px;',
-    });
-
-    modal.classList.add('show', 'fade');
-    changesAttributes(
-      modal,
-      ['aria-hidden'],
-      {
-        style: 'display: block',
-        'data-bs-backdrop': true,
-        'aria-modal': true,
+  const renderModal = (state) => {
+    const { visiblePostId, modalVisible } = state.modal;
+    const bootstrapModal = new bootstrap.Modal(modal);
+    const status = {
+      hidden: () => bootstrapModal.hide(),
+      showed: () => {
+        const clickedPost = state.content.postsData
+          .find((post) => (Number(visiblePostId) === Number(post.postId)));
+        readBtn.href = clickedPost.postLink;
+        modalTitle.textContent = clickedPost.postTitle;
+        modalBody.textContent = clickedPost.postDescription;
+        bootstrapModal.show();
       },
-    );
-    const clickedPost = state.content.postsData
-      .find((post) => (Number(visiblePostId) === Number(post.postId)));
-    readBtn.href = clickedPost.postLink;
-    modalTitle.textContent = clickedPost.postTitle;
-    modalBody.textContent = clickedPost.postDescription;
-
-    const backdrop = generateHTMLElement('div', ['modal-backdrop', 'fade', 'show']);
-
-    body.appendChild(backdrop);
-  };
-
-  const hideModal = () => {
-    const backdropDivEl = document.querySelector('.modal-backdrop');
-    modal.classList.remove('show');
-    body.classList.remove('modal-open', 'style');
-    body.removeAttribute('style');
-
-    changesAttributes(modal, ['aria-modal', 'style'], { 'aria-hidden': 'true' });
-    backdropDivEl.remove();
-  };
-
-  const renderModal = (currentStatus, state) => {
-    const render = {
-      showed: () => showModal(state),
-      hidden: () => hideModal(),
     };
-    render[currentStatus]();
+    return status[modalVisible]();
   };
 
   const renderErrors = (formState) => {
@@ -196,7 +165,7 @@ export default (appState, staticElements, i18next) => {
   return onChange(appState, (path, current) => {
     switch (path) {
       case 'modal.modalVisible':
-        renderModal(current, appState);
+        renderModal(appState);
         break;
       case 'form.errorMessage':
         renderErrors(appState.form);
