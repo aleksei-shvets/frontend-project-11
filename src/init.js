@@ -1,10 +1,11 @@
+import { Modal } from 'bootstrap';
 import axios from 'axios';
 import i18next from 'i18next';
 import uniqueId from 'lodash.uniqueid';
 import * as yup from 'yup';
 import xmlParser from './parser.js';
 import watcher from './view.js';
-import ru from './locale/ru.js';
+import resources from './locale/index.js';
 import validationErrors from './locale/validationErrors.js';
 
 const initI18n = () => {
@@ -12,9 +13,7 @@ const initI18n = () => {
   return initanceI18n.init({
     lng: 'ru',
     debug: true,
-    resources: {
-      ru,
-    },
+    resources,
   });
 };
 
@@ -67,10 +66,11 @@ const requestRssChannel = (link, watchedState) => axios.get(getUrl(link))
     watchedState.form.inputText = '';
   })
   .catch((error) => {
+    watchedState.form.state = 'failed';
     if (axios.isAxiosError(error)) {
       watchedState.form.errorMessage = 'notConnected';
     }
-    if (error.message === 'notRss') {
+    if (error.isParsingError) {
       watchedState.form.errorMessage = 'notRss';
     }
   });
@@ -90,7 +90,11 @@ const fetchNewPosts = (watchedState) => {
         });
       })
       .catch((error) => {
-        throw error;
+        if (error.isParsingError) {
+          console.log('notRss');
+        } else {
+          throw error;
+        }
       }));
 
     Promise.all(promises)
@@ -127,13 +131,8 @@ export default () => {
 
   initI18n()
     .then((i18n) => {
-      const watchedState = watcher(state, staticElements, i18n);
+      const watchedState = watcher(state, staticElements, i18n, Modal);
       yup.setLocale(validationErrors);
-      const makeShema = (addedLinks) => yup
-        .string()
-        .url()
-        .required()
-        .notOneOf(addedLinks);
       watchedState.content.readPosts = new Set();
       postsContainer.addEventListener('click', (e) => {
         const clickedElement = e.target;
@@ -149,10 +148,10 @@ export default () => {
       });
       formEl.addEventListener('submit', (e) => {
         e.preventDefault();
-        const addedLinks = watchedState.content.feedItems.map((feedItem) => feedItem.link);
-        const schema = makeShema(addedLinks);
         const form = new FormData(e.target);
         const link = form.get('url');
+        const addedLinks = watchedState.content.postsData.map((post) => post.link);
+        const schema = yup.string().url().required().notOneOf(addedLinks);
         isValidLink(link, schema)
           .then(() => {
             watchedState.form.state = 'filling';

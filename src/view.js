@@ -1,4 +1,4 @@
-import bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js';
+// import bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import onChange from 'on-change';
 
 const changesClasses = (element, deletedClasses = [], addedClasses = []) => {
@@ -10,11 +10,6 @@ const setAttributes = (element, attributes = {}) => {
   Object.keys(attributes).forEach((key) => element.setAttribute(key, attributes[key]));
 };
 
-/* const changesAttributes = (element, deletedAttributes = [], addedAttributes = {}) => {
-  deletedAttributes.forEach((deletedAttribute) => element.removeAttribute(deletedAttribute));
-  setAttributes(element, addedAttributes);
-}; */
-
 const generateHTMLElement = (elementName, classes = [], attributes = {}) => {
   const newElement = document.createElement(elementName);
   newElement.classList.add(...classes);
@@ -22,7 +17,7 @@ const generateHTMLElement = (elementName, classes = [], attributes = {}) => {
   return newElement;
 };
 
-export default (appState, staticElements, i18next) => {
+export default (appState, staticElements, i18next, Modal) => {
   const {
     modalTitle,
     modalBody,
@@ -90,7 +85,7 @@ export default (appState, staticElements, i18next) => {
 
   const renderModal = (state) => {
     const { visiblePostId, modalVisible } = state.modal;
-    const bootstrapModal = new bootstrap.Modal(modal);
+    const bootstrapModal = new Modal(modal);
     const status = {
       hidden: () => bootstrapModal.hide(),
       showed: () => {
@@ -120,7 +115,7 @@ export default (appState, staticElements, i18next) => {
       filling: () => { submitBtn.disabled = false; },
       processing: () => { submitBtn.disabled = true; },
       failed: () => {
-        inputEl.textContent = inputText;
+        inputEl.value = inputText;
         submitBtn.disabled = false;
       },
       processed: () => {
