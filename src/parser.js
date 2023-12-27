@@ -5,7 +5,6 @@ export default (xmlString) => {
   if (parseError !== null) {
     const error = new Error(parseError);
     error.isParsingError = true;
-    // console.error(JSON.stringify(error));
     throw error;
   }
   const postItems = doc.querySelectorAll('channel > item');

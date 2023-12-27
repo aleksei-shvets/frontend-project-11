@@ -22,10 +22,11 @@ const delay = 5000;
 const isValidLink = (link, schema) => schema.validate(link)
   .then((validate) => validate)
   .catch((error) => {
-    console.log(error);
-    // error.message = error.key || 'unknownError';
+    error.message = error.errors.map((err) => err.key) || 'unknownError';
     throw error;
   });
+
+const makeShema = (addedLinks) => yup.string().url().required().notOneOf(addedLinks);
 
 const staticElements = {
   feedbackEl: document.querySelector('.feedback'),
@@ -150,8 +151,9 @@ export default () => {
         e.preventDefault();
         const form = new FormData(e.target);
         const link = form.get('url');
-        const addedLinks = watchedState.content.postsData.map((post) => post.link);
-        const schema = yup.string().url().required().notOneOf(addedLinks);
+        const addedLinks = watchedState.content.feedItems.map((feed) => feed.link);
+        const schema = makeShema(addedLinks);
+
         isValidLink(link, schema)
           .then(() => {
             watchedState.form.state = 'filling';

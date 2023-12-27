@@ -1,4 +1,3 @@
-// import bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import onChange from 'on-change';
 
 const changesClasses = (element, deletedClasses = [], addedClasses = []) => {
