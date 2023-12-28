@@ -16,12 +16,11 @@ const generateHTMLElement = (elementName, classes = [], attributes = {}) => {
   return newElement;
 };
 
-export default (appState, staticElements, i18next, Modal) => {
+export default (appState, staticElements, i18next) => {
   const {
     modalTitle,
     modalBody,
     readBtn,
-    modal,
     feedbackEl,
     inputEl,
     submitBtn,
@@ -73,7 +72,12 @@ export default (appState, staticElements, i18next, Modal) => {
       const button = generateHTMLElement(
         'button',
         ['btn', 'btn-outline-primary', 'btn-sm', 'post-button'],
-        { type: 'button', rel: 'noopener noreferrer' },
+        {
+          type: 'button',
+          rel: 'noopener noreferrer',
+          'data-bs-toggle': 'modal',
+          'data-bs-target': '#modal',
+        },
       );
       button.textContent = i18next('viewing');
       button.dataset.postId = post.postId;
@@ -84,19 +88,13 @@ export default (appState, staticElements, i18next, Modal) => {
 
   const renderModal = (state) => {
     const { visiblePostId, modalVisible } = state.modal;
-    const bootstrapModal = new Modal(modal);
-    const status = {
-      hidden: () => bootstrapModal.hide(),
-      showed: () => {
-        const clickedPost = state.content.postsData
-          .find((post) => (Number(visiblePostId) === Number(post.postId)));
-        readBtn.href = clickedPost.postLink;
-        modalTitle.textContent = clickedPost.postTitle;
-        modalBody.textContent = clickedPost.postDescription;
-        bootstrapModal.show();
-      },
-    };
-    return status[modalVisible]();
+    if (modalVisible === 'showed') {
+      const clickedPost = state.content.postsData
+        .find((post) => (Number(visiblePostId) === Number(post.postId)));
+      readBtn.href = clickedPost.postLink;
+      modalTitle.textContent = clickedPost.postTitle;
+      modalBody.textContent = clickedPost.postDescription;
+    }
   };
 
   const renderErrors = (formState) => {

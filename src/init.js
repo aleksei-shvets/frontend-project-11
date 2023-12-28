@@ -1,4 +1,4 @@
-import { Modal } from 'bootstrap';
+import 'bootstrap';
 import axios from 'axios';
 import i18next from 'i18next';
 import uniqueId from 'lodash.uniqueid';
@@ -109,7 +109,6 @@ const fetchNewPosts = (watchedState) => {
 export default () => {
   const {
     formEl,
-    modal,
     postsContainer,
   } = staticElements;
 
@@ -132,7 +131,7 @@ export default () => {
 
   initI18n()
     .then((i18n) => {
-      const watchedState = watcher(state, staticElements, i18n, Modal);
+      const watchedState = watcher(state, staticElements, i18n);
       yup.setLocale(validationErrors);
       watchedState.content.readPosts = new Set();
       postsContainer.addEventListener('click', (e) => {
@@ -171,10 +170,6 @@ export default () => {
           });
       });
 
-      modal.addEventListener('hidden.bs.modal', () => {
-        watchedState.modal.modalVisible = 'hidden';
-        watchedState.modal.visiblePostId = '';
-      });
       fetchNewPosts(watchedState);
     });
 };
